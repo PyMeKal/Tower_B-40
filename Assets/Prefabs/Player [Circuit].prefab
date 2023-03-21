@@ -285,6 +285,7 @@ GameObject:
   - component: {fileID: 8891871540199083768}
   - component: {fileID: 1038333563}
   - component: {fileID: 2448774883744932353}
+  - component: {fileID: 1993011243241653008}
   m_Layer: 0
   m_Name: Player [Circuit]
   m_TagString: Untagged
@@ -338,7 +339,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 25
-  m_LinearDrag: 999
+  m_LinearDrag: 0
   m_AngularDrag: 0
   m_GravityScale: 1
   m_Material: {fileID: 0}
@@ -358,12 +359,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66cd2e1187e45c34088f428d5932a00c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkSpeed: 35
+  walkSpeed: 1e+16
   jumpForce: 0
   groundLayers:
     serializedVersion: 2
     m_Bits: 0
   spritesTransform: {fileID: 631179787540890581}
+--- !u!114 &1993011243241653008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 631179787387963360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc5d977108eb7f942a0ad03994f1b227, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 631179787540890583}
 --- !u!1 &631179787423788876
 GameObject:
   m_ObjectHideFlags: 0

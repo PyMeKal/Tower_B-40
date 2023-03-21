@@ -5,7 +5,9 @@ using System;
 
 public class PlayerAnimation : MonoBehaviour
 {
-    private Animator animator;
+
+    [SerializeField] private Animator animator;
+
     void Update()
     {
 
@@ -22,6 +24,11 @@ public class PlayerAnimation : MonoBehaviour
                 int valInt;
                 Int32.TryParse(valString, out valInt);
                 animator.SetInteger(param, valInt);
+                break;
+            case "System.Boolean":
+                bool valBool;
+                Boolean.TryParse(valString, out valBool);
+                animator.SetBool(param, valBool);
                 break;
 
             default:
