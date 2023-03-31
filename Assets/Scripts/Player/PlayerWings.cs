@@ -14,15 +14,23 @@ public class PlayerWings : MonoBehaviour
         initialLocalPos = transform.position - playerSprite.position;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         t += Time.deltaTime;
         Vector3 directionVector = playerSprite.localEulerAngles.y == 0 ? new Vector3(1f, 1f, 1f) : new Vector3(-1f, 1f, 1f);
         targetPos = playerSprite.position + Vector3.Scale(initialLocalPos, directionVector) + new Vector3(0, Mathf.Sin(t*hoverFrequency)*hoverMagnitude);
 
-        transform.position = Vector3.Lerp(transform.position, targetPos, followSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetPos, followSpeed);
 
         //Rotation
-        transform.localEulerAngles = playerSprite.localEulerAngles;
+        if(Vector2.Distance(transform.position, targetPos) < 1f)
+            transform.localEulerAngles = playerSprite.localEulerAngles;
+        else
+        {
+            if(transform.position.x < targetPos.x)
+                transform.localEulerAngles = new Vector3(0,0,0);
+            else
+                transform.localEulerAngles = new Vector3(0,180f,0);
+        }
     }
 }

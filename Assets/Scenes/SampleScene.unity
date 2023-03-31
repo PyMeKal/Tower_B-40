@@ -409,7 +409,7 @@ MonoBehaviour:
   playerSprite: {fileID: 1324726284}
   hoverMagnitude: 0.05
   hoverFrequency: 2
-  followSpeed: 8
+  followSpeed: 0.8
   t: 0
 --- !u!212 &789356336
 SpriteRenderer:
@@ -743,7 +743,7 @@ Transform:
   m_GameObject: {fileID: 1555113564}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2.5, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 1}
+  m_LocalScale: {x: 20, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -767,7 +767,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1808661427}
-  speed: 4
+  speed: 0.8
   offset: {x: 0, y: 0, z: -10}
 --- !u!4 &1808661427 stripped
 Transform:
@@ -904,23 +904,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_AssetsPPU
-      value: 128
+      value: 64
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_CropFrame
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_GridSnapping
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_RefResolutionX
-      value: 1600
+      value: 960
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_RefResolutionY
-      value: 800
+      value: 540
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870903, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_RootOrder
@@ -968,7 +968,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870904, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: orthographic size
-      value: 3.125
+      value: 4.21875
       objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870906, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_RenderPostProcessing

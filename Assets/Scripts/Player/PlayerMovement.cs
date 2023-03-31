@@ -57,18 +57,24 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 moveVector;
         float direction = 1f;
-        direction = Input.GetAxis("Horizontal") != 0f ? Mathf.Abs(Input.GetAxis("Horizontal")) / Input.GetAxis("Horizontal") : direction;
-
+        float vx = 0f;
+        if(Input.GetAxisRaw("Horizontal") != 0f)
+            direction = Input.GetAxisRaw("Horizontal");
+        //print(direction);
         if (walkAccelPow == moveAccel)
         {
-            float vx = Mathf.Clamp(walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) + direction * v0, -walkSpeed, walkSpeed);
+            vx = Mathf.Clamp(walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) + direction * v0, -walkSpeed, walkSpeed);
             moveVector = new Vector3(vx, rb.velocity.y);
         }
         else
-            moveVector = new Vector3(walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow), rb.velocity.y);
+        {
+            vx = walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow);
+            moveVector = new Vector3(vx, rb.velocity.y);
+        }
 
         rb.velocity = moveVector;
         playerAnimation.RequestAnimation<bool>("Walk", Input.GetAxisRaw("Horizontal") != 0 ? true : false);
+        playerAnimation.RequestAnimation<bool>("Walk_play_Decel", Mathf.Abs(vx) >= walkSpeed * 0.8f ? true : false);
         prevInput = GetInputVector();
 
         Vector3 GetInputVector()
