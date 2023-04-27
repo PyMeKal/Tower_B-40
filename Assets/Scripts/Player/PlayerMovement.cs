@@ -43,7 +43,10 @@ public class PlayerMovement : MonoBehaviour
         jump();
     }
 
+
+    // Local Variables for Move()
     Vector3 input, prevInput, deltaInput;
+    float direction = 1f;
     void Move()
     {
         input = GetInputVector();
@@ -56,7 +59,7 @@ public class PlayerMovement : MonoBehaviour
             walkAccelPow = stopAccel;
 
         Vector3 moveVector;
-        float direction = 1f;
+        
         float vx = 0f;
         if(Input.GetAxisRaw("Horizontal") != 0f)
             direction = Input.GetAxisRaw("Horizontal");
@@ -68,7 +71,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            vx = walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow);
+            vx = walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) * direction;
             moveVector = new Vector3(vx, rb.velocity.y);
         }
 

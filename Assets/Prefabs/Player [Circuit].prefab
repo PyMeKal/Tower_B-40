@@ -202,6 +202,7 @@ GameObject:
   - component: {fileID: 1038333563}
   - component: {fileID: 2448774883744932353}
   - component: {fileID: 1993011243241653008}
+  - component: {fileID: 1808661432}
   m_Layer: 0
   m_Name: Player [Circuit]
   m_TagString: Untagged
@@ -254,8 +255,8 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 25
-  m_LinearDrag: 0
+  m_Mass: 1
+  m_LinearDrag: 1
   m_AngularDrag: 0
   m_GravityScale: 1
   m_Material: {fileID: 0}
@@ -275,11 +276,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66cd2e1187e45c34088f428d5932a00c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkSpeed: 1e+16
-  moveAccel: 0
-  stopAccel: 0
-  v0: 0
-  jumpSpeed: 0
+  walkSpeed: 7
+  moveAccel: 1
+  stopAccel: 2
+  v0: 2
+  jumpSpeed: 10
   groundLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -297,6 +298,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 631179787540890583}
+--- !u!114 &1808661432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 631179787387963360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9e334dad911c62408d488e8ce618b9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  eyesSprite: {fileID: 631179787147627620}
+  spriteObj: {fileID: 631179787540890581}
+  maxCalculatedDistance: 1
+  speed: 0.5
+  distanceCoeff: 0.008
+  axisCoeff: {x: 0.5, y: 1, z: 0}
 --- !u!1 &631179787423788876
 GameObject:
   m_ObjectHideFlags: 0
