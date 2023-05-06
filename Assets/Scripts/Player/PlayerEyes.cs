@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerEyes : MonoBehaviour
 {
     public Transform eyesSprite, spriteObj;
-    private Vector3 basePosition = Vector3.zero;
+    [SerializeField] private Vector3 basePosition = Vector3.zero;
     // See CameraFollowTarget.cs
     private Vector3 aimedPosition;
     [SerializeField] private float maxCalculatedDistance;
@@ -18,12 +18,17 @@ public class PlayerEyes : MonoBehaviour
         Vector3 cameraPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector3 delta = cameraPos - transform.position;
 
-        aimedPosition = Vector3.Lerp(basePosition, delta, distanceCoeff);
-
         // Used to take sprite orientation into account. 1 if facing right, -1 if facing left.
         float directionCoeff = Mathf.Abs(spriteObj.localEulerAngles.y) < 0.1f ? 1.0f : -1.0f;
+
+        // Unused
+        // Vector3 basePosWithDirection = new Vector3(basePosition.x*directionCoeff, basePosition.y);
+        aimedPosition = Vector3.Lerp(basePosition, delta, distanceCoeff);
+
+        
         aimedPosition.x *= directionCoeff;
         
         eyesSprite.localPosition = Vector3.Lerp(basePosition, Vector3.Scale(aimedPosition, axisCoeff), speed);
+        // print(basePosition);
     }
 }

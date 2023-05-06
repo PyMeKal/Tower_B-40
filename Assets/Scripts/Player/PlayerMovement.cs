@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-
     public float walkSpeed;
     public float moveAccel, stopAccel, v0;
     private float walkAccelPow;
     public float jumpSpeed;
     public LayerMask groundLayers;
+    [SerializeField] private Transform feetPosision;
 
     public Transform spritesTransform;
     private Rigidbody2D rb;
@@ -17,6 +17,9 @@ public class PlayerMovement : MonoBehaviour
     private PlayerAnimation playerAnimation;
     private delegate void DELVoid();
     private DELVoid flipSprite, move, jump;
+
+    [Header("Dash settings")]
+    [SerializeField] private float dashDistance, dashYSnap, upDashSpeed;
     void Start()
     {
         //Scripts
@@ -41,8 +44,10 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         jump();
+        Dash();
     }
-
+    void Empty()
+    {return;}
 
     // Local Variables for Move()
     Vector3 input, prevInput, deltaInput;
@@ -59,9 +64,9 @@ public class PlayerMovement : MonoBehaviour
             walkAccelPow = stopAccel;
 
         Vector3 moveVector;
-        
+
         float vx = 0f;
-        if(Input.GetAxisRaw("Horizontal") != 0f)
+        if (Input.GetAxisRaw("Horizontal") != 0f)
             direction = Input.GetAxisRaw("Horizontal");
         //print(direction);
         if (walkAccelPow == moveAccel)
@@ -88,14 +93,18 @@ public class PlayerMovement : MonoBehaviour
 
     void Jump()
     {
-        //----Jump----
-        if (Input.GetKeyDown(KeyCode.W))
+        bool onGround = Physics2D.OverlapCircle(feetPosision.position, 0.2f, groundLayers) != null ? true : false;
+        playerAnimation.RequestAnimation<bool>("On_Ground", onGround);
+
+        if (Input.GetKeyDown(KeyCode.W) && onGround)
         {
-            print("Jump");
+            //print("Jump");
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+            playerAnimation.RequestAnimation<string>("Jump", string.Empty);
         }
 
     }
+
     void FlipSpritesByMovement()
     {
         if (Input.GetAxisRaw("Horizontal") > 0)
@@ -106,6 +115,51 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetAxisRaw("Horizontal") < 0)
         {
             spritesTransform.localEulerAngles = new Vector3(0, 180f, 0);
+        }
+    }
+
+    void Dash()
+    {
+        DELVoid dash;
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (mousePos.y > transform.position.y - dashYSnap && mousePos.y < transform.position.y + dashYSnap)
+        {
+            dash = DashHorizontal;
+        }
+        else if (mousePos.y >= transform.position.y + dashYSnap)
+        {
+            dash = DashUp;
+        }
+        else
+        {
+            dash = Phase;
+        }
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            dash();
+        }
+
+        void DashHorizontal()
+        {
+            float direction = mousePos.x > transform.position.x ? 1f : -1f;
+            float d = dashDistance;
+            rb.MovePosition(transform.position + new Vector3(d*direction, 0));
+        }
+        void DashUp()
+        {
+            float d = Vector3.Distance(transform.position, mousePos) >= dashDistance ? dashDistance : Vector3.Distance(transform.position, mousePos);
+
+            rb.MovePosition(transform.position + Vector3.Normalize(mousePos - transform.position)*d);
+            rb.velocity = Vector3.Normalize(mousePos - transform.position)*upDashSpeed;
+
+            move = Empty;
+        }
+        if (Input.GetAxisRaw("Horizontal") != 0)
+            move = Move;
+
+        void Phase()
+        {
+
         }
     }
 }

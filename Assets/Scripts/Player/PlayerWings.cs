@@ -17,6 +17,12 @@ public class PlayerWings : MonoBehaviour
     void FixedUpdate()
     {
         t += Time.deltaTime;
+        // To prevent t from getting too big
+        if(t>=60f*Mathf.PI)
+        {
+            t = t-60f*Mathf.PI;
+        }
+
         Vector3 directionVector = playerSprite.localEulerAngles.y == 0 ? new Vector3(1f, 1f, 1f) : new Vector3(-1f, 1f, 1f);
         targetPos = playerSprite.position + Vector3.Scale(initialLocalPos, directionVector) + new Vector3(0, Mathf.Sin(t*hoverFrequency)*hoverMagnitude);
 
