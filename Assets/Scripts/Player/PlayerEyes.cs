@@ -18,6 +18,8 @@ public class PlayerEyes : MonoBehaviour
         Vector3 cameraPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector3 delta = cameraPos - transform.position;
 
+        delta = delta.normalized * Mathf.Clamp(delta.magnitude, 0f, maxCalculatedDistance);
+
         // Used to take sprite orientation into account. 1 if facing right, -1 if facing left.
         float directionCoeff = Mathf.Abs(spriteObj.localEulerAngles.y) < 0.1f ? 1.0f : -1.0f;
 

@@ -714,7 +714,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1204661729}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
   m_Name: 
@@ -872,6 +872,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1808661432, guid: 4e6d9dadf2239e24eb4414ca2ad33745, type: 3}
+      propertyPath: maxCalculatedDistance
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 631179787387963360, guid: 4e6d9dadf2239e24eb4414ca2ad33745, type: 3}
       propertyPath: m_Name
       value: Player [Circuit]
@@ -937,6 +941,34 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 1808661427}
+    - target: {fileID: 3412214955114999786, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955114999789, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_AssetsPPU
+      value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_CropFrame
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_GridSnapping
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_RefResolutionX
+      value: 800
+      objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870902, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: m_RefResolutionY
+      value: 450
+      objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870903, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -981,9 +1013,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3412214955798870904, guid: 5df19548240091e4c87e7088913ed013, type: 3}
+      propertyPath: orthographic size
+      value: 4.21875
+      objectReference: {fileID: 0}
     - target: {fileID: 3412214955798870907, guid: 5df19548240091e4c87e7088913ed013, type: 3}
       propertyPath: m_Name
       value: Main Camera
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2214179015245768141, guid: 5df19548240091e4c87e7088913ed013, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 5df19548240091e4c87e7088913ed013, type: 3}
