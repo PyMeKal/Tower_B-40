@@ -26,7 +26,6 @@ public class PlayerEyes : MonoBehaviour
         // Unused
         // Vector3 basePosWithDirection = new Vector3(basePosition.x*directionCoeff, basePosition.y);
         aimedPosition = Vector3.Lerp(basePosition, delta, distanceCoeff);
-
         
         aimedPosition.x *= directionCoeff;
         

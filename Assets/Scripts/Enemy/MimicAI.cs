@@ -93,6 +93,6 @@ public class MimicAI : MonoBehaviour
 
     void STATE_Search()
     {
-
+        
     }
 }
