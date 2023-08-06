@@ -4,9 +4,11 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using System;
+using Unity.Burst;
 using UnityEditor.Experimental.GraphView;
 using Random = UnityEngine.Random;  // Praise jetbrains
 
+// [BurstCompile]
 public class NeuralNetwork
 {
     public enum ActivationFunction
@@ -146,6 +148,7 @@ public class NeuralNetwork
         // First layer is the input layer. Don't do relu on it.
         for (int n = 0; n < layers[0].neurons; n++)
             layers[0].biases[n] = Random.Range(-1f, 1f);
+        compiled = true;
     }
 
     public float[] Compute(float[] inputVector)
@@ -172,8 +175,31 @@ public class NeuralNetwork
             {
                 logit = layer.Forward(logit);
             }
+            // Debug.Log(logit);
         }
 
         return logit;
+    }
+
+    public void Mutate(float rangeWeights, float rangeBiases)
+    {
+        for (int i = 0; i < layers.Count; i++)
+        {
+            if (i == 0)
+            {
+                // Input Layer
+                layers[i].biases = layers[i].biases.Select(b => b + Random.Range(-rangeBiases, rangeBiases)).ToArray();
+            }
+            else
+            {
+                for(int n = 0; n < layers[i].neurons; n++)
+                {
+                    for (int c = 0; c < layers[i - 1].neurons; c++)
+                        layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
+                }
+                layers[i].biases = layers[i].biases.Select(b => b + Random.Range(-rangeBiases, rangeBiases)).ToArray();
+            }
+            
+        }
     }
 }
