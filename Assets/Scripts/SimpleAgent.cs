@@ -6,7 +6,7 @@ public class SimpleAgent : MonoBehaviour
 {
     public NeuralNetwork brain;
     public Agent agent;
-
+    private AgentInterface agentInterface;
     public float computeClock, baseSpeed;
 
     private float computeClockTimer, t;
@@ -15,22 +15,25 @@ public class SimpleAgent : MonoBehaviour
 
     private Vector2 setVelocity;
     
-    // Start is called before the first frame update
     void Start()
     {
-        brain = new NeuralNetwork(gameObject.name + "_brain");
-        brain.AddLayer(3, NeuralNetwork.ActivationFunction.Linear);  // for x y coords
-        brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
-        brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
-        brain.AddLayer(2, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
-        brain.Compile();
+        agentInterface = GetComponent<AgentInterface>();
+        if (!agentInterface.modelReceived)
+        {
+            // Create default model with randomized w&b if no model has been loaded onto the agent;
+            brain = new NeuralNetwork(gameObject.name + "_brain");
+            brain.AddLayer(3, NeuralNetwork.ActivationFunction.Linear); // for x y coords
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(2, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
+            brain.Compile();
+        }
 
         agent = new Agent(gameObject, 0f, brain);
         
         computeClockTimer = computeClock;
     }
     
-    // Update is called once per frame
     void Update()
     {
         computeClockTimer -= Time.deltaTime;

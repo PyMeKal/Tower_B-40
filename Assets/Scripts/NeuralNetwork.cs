@@ -22,7 +22,7 @@ public class NeuralNetwork
     public class Dense
     {
         public readonly int neurons;
-        private readonly ActivationFunction activationFunction;
+        public readonly ActivationFunction activationFunction;
         public float[,] weights;
         public float[] biases;
 
@@ -201,5 +201,16 @@ public class NeuralNetwork
             }
             
         }
+    }
+
+    public NeuralNetwork DeepCopy(string newName)
+    {
+        NeuralNetwork newModel = new NeuralNetwork(newName);
+        List<Dense> newLayers = new List<Dense>();
+        foreach (var layer in layers)
+        {
+            Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
+        }
+        newModel.Compile();
     }
 }

@@ -9,9 +9,10 @@ public class MotherNature : MonoBehaviour
 {
     // Simple evolution/natural selection testing script
     public List<Agent> agents = new List<Agent>();
+    public GameObject agentPrefab;
     public float genocideClock;
     private float genocideClockTimer;
-    [Range(0f, 100f)] public float genocidePercentage;
+    public int offspringCount;
 
     void Start()
     {
@@ -30,8 +31,26 @@ public class MotherNature : MonoBehaviour
     private void DayOfReckoning()
     {
         List<Agent> agentsSorted = agents.OrderByDescending(a => a.reward).ToList();
-        int survivorCount = Mathf.RoundToInt(agents.Count * (genocidePercentage/100f));
+        int survivorCount = agents.Count/offspringCount;
         List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
-        // To be continued
+        List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
+        for (int i = 0; i < killList.Count; i++)
+        {
+            GameObject.Destroy(killList[i].agentObj);
+        }
+
+        List<GameObject> newGeneration = new List<GameObject>();
+        for (int i = 0; i < survivors.Count; i++)
+        {
+            GameObject[] offspring = new GameObject[offspringCount];
+            for (int j = 0; j < offspringCount; j++)
+            {
+                offspring[j] = Instantiate(agentPrefab, Vector3.zero, Quaternion.identity);
+                AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
+                agentInterface.receivedModel = survivors[i].brain;
+                agentInterface.modelReceived = true;
+            }
+            Destroy(survivors[i].agentObj);
+        }
     }
 }

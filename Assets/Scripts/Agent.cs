@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class Agent
 {
-    public GameObject agent;
+    public GameObject agentObj;
     public float reward;
     public NeuralNetwork brain;
 
-    public Agent(GameObject agent, float reward, NeuralNetwork brain)
+    public Agent(GameObject agentObj, float reward, NeuralNetwork brain)
     {
-        this.agent = agent;
+        this.agentObj = agentObj;
         this.reward = reward;
         this.brain = brain;
     }
