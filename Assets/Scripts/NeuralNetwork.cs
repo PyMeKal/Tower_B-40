@@ -151,6 +151,15 @@ public class NeuralNetwork
         compiled = true;
     }
 
+    public void Compile(bool initializeWnB)
+    {
+        if(initializeWnB)
+            Compile();
+        else
+            compiled = true;
+        
+    }
+
     public float[] Compute(float[] inputVector)
     {
         if (!compiled)
@@ -210,7 +219,22 @@ public class NeuralNetwork
         foreach (var layer in layers)
         {
             Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
+            newLayer.weights = layer.weights;
+            newLayer.biases = layer.biases;
         }
-        newModel.Compile();
+        newModel.Compile(false);
+
+        return newModel;
+    }
+
+    public void ReceiveModel(NeuralNetwork model, bool mutate = false, float rangeWeights = 0.2f, float rangeBiases = 0.2f)
+    {
+        this.name = model.name;
+        this.layers = model.layers;
+        this.compiled = model.compiled;
+        if (mutate)
+        {
+            Mutate(rangeWeights, rangeBiases);
+        }
     }
 }

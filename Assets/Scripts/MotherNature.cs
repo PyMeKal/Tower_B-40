@@ -10,6 +10,7 @@ public class MotherNature : MonoBehaviour
     // Simple evolution/natural selection testing script
     public List<Agent> agents = new List<Agent>();
     public GameObject agentPrefab;
+    public int generation;
     public float genocideClock;
     private float genocideClockTimer;
     public int offspringCount;
@@ -36,7 +37,7 @@ public class MotherNature : MonoBehaviour
         List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
         for (int i = 0; i < killList.Count; i++)
         {
-            GameObject.Destroy(killList[i].agentObj);
+            Destroy(killList[i].agentObj);
         }
 
         List<GameObject> newGeneration = new List<GameObject>();
@@ -47,10 +48,13 @@ public class MotherNature : MonoBehaviour
             {
                 offspring[j] = Instantiate(agentPrefab, Vector3.zero, Quaternion.identity);
                 AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
-                agentInterface.receivedModel = survivors[i].brain;
+                agentInterface.receivedModel = survivors[i].brain.DeepCopy("Billy");
                 agentInterface.modelReceived = true;
             }
             Destroy(survivors[i].agentObj);
         }
+
+        agents = new List<Agent>();
+        generation++;
     }
 }
