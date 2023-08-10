@@ -27,9 +27,15 @@ public class NeuralNetwork
         public float[] biases;
 
         private Func<float, float> relu = x => Mathf.Max(0f, x);
-        private Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-x));
-        private Func<float, float> swish = x => x / (1f + Mathf.Exp(-x));
-        private Func<float, float> tanh = x => (Mathf.Exp(2 * x) - 1) / (Mathf.Exp(2 * x) + 1);
+        
+        // Feat. GPT4. Clamped to prevent overflow
+        private Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+        private Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+        private Func<float, float> tanh = x => {
+            if (x > 10) return 1f;
+            if (x < -10) return -1f;
+            return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);
+        };
 
         public readonly Func<float, float> actFuncDel;
         
@@ -87,15 +93,11 @@ public class NeuralNetwork
                 float sum = inputVector.Select((t, c) => t * weights[n, c]).Sum();
                 
                 float y = actFuncDel(sum + biases[n]);
-                /*
-                y = activationFunction switch  // Compact switch expression
+                if (float.IsNaN(y))
                 {
-                    ActivationFunction.ReLU => y < 0 ? 0f : y,
-                    ActivationFunction.Sigmoid => 1f / (1 + Mathf.Exp(-y)),
-                    ActivationFunction.Swish => y / (1 + Mathf.Exp(-y)),
-                    _ => y  // Default
-                };
-                */
+                    Debug.LogWarning($"NaN occured (y) in Dense calculation: sum: {sum}, act-func: {activationFunction.ToString()}\n" +
+                                     $"inputVector: {String.Join(", ", inputVector.Select(f => f.ToString()))}");
+                }
                 outputVector[n] = y;
             }
             return outputVector;
@@ -167,46 +169,61 @@ public class NeuralNetwork
             Debug.LogWarning($"Model {name} is not compiled. Compute call ignored.");
             return new float[]{};
         }
-
         if (layers[0].neurons != inputVector.Length)
         {
             throw new Exception(
                 $"ERROR: Input vector size ({inputVector.Length}) does not match input layer size ({layers[0].neurons}).");
-            
-        }
 
+        }
+        
+        //--------------------------------------------
+        
         float[] logit = inputVector;
         foreach (Dense layer in layers)
         {
             if(layer == layers[0])
                 logit = inputVector.Select((t, c) => layers[0].actFuncDel(t + layers[0].biases[c])).ToArray();
             else
-            {
                 logit = layer.Forward(logit);
-            }
-            // Debug.Log(logit);
         }
 
         return logit;
     }
 
-    public void Mutate(float rangeWeights, float rangeBiases)
+    public void Mutate(float rangeWeights, float rangeBiases, float reshuffleChance=0.05f)
     {
+        // Debug.Log($"Mutation called. layers.Count = {layers.Count}");
+        float reshuffleAbsRangeWeight = 1.5f;
+        float reshuffleAbsRangeBias = 1f;
+        
+        
         for (int i = 0; i < layers.Count; i++)
         {
-            if (i == 0)
+            // Biases
+            for (int n = 0; n < layers[i].biases.Length; n++)
             {
-                // Input Layer
-                layers[i].biases = layers[i].biases.Select(b => b + Random.Range(-rangeBiases, rangeBiases)).ToArray();
+                if (Random.Range(0f, 1f) <= reshuffleChance)
+                {
+                    layers[i].biases[n] = Random.Range(-reshuffleAbsRangeBias, reshuffleAbsRangeBias);
+                    continue;
+                }
+                layers[i].biases[n] += Random.Range(-rangeBiases, rangeBiases);
             }
-            else
+            
+            // Weights
+            if (i > 0)
             {
-                for(int n = 0; n < layers[i].neurons; n++)
+                for (int n = 0; n < layers[i].neurons; n++)
                 {
                     for (int c = 0; c < layers[i - 1].neurons; c++)
+                    {
+                        if (Random.Range(0f, 1f) <= reshuffleChance)
+                        {
+                            layers[i].weights[n, c] = Random.Range(-reshuffleAbsRangeWeight, reshuffleAbsRangeWeight);
+                        }
                         layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
+                    }
                 }
-                layers[i].biases = layers[i].biases.Select(b => b + Random.Range(-rangeBiases, rangeBiases)).ToArray();
             }
             
         }
@@ -221,20 +238,19 @@ public class NeuralNetwork
             Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
             newLayer.weights = layer.weights;
             newLayer.biases = layer.biases;
+            newLayers.Add(newLayer);
         }
-        newModel.Compile(false);
 
+        newModel.layers = newLayers;
+        newModel.Compile(false);
+        // Debug.Log("Created new model: layer count = " + newLayers.Count);
         return newModel;
     }
 
-    public void ReceiveModel(NeuralNetwork model, bool mutate = false, float rangeWeights = 0.2f, float rangeBiases = 0.2f)
+    public void ReceiveModel(NeuralNetwork model)
     {
         this.name = model.name;
         this.layers = model.layers;
         this.compiled = model.compiled;
-        if (mutate)
-        {
-            Mutate(rangeWeights, rangeBiases);
-        }
     }
 }

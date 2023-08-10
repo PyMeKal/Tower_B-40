@@ -25,6 +25,10 @@ public class MotherNature : MonoBehaviour
         if (genocideClockTimer <= 0f)
         {
             genocideClockTimer = genocideClock;
+            foreach (var agent in agents)
+            {
+                print(agent.brain.layers[1].biases[0]);
+            }
             DayOfReckoning();
         }
     }

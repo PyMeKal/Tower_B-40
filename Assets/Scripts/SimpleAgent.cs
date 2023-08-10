@@ -25,7 +25,7 @@ public class SimpleAgent : MonoBehaviour
         {
             // Create default model with randomized w&b if no model has been loaded onto the agent;
             brain = new NeuralNetwork(gameObject.name + "_brain");
-            brain.AddLayer(3, NeuralNetwork.ActivationFunction.Linear); // for x y coords
+            brain.AddLayer(3, NeuralNetwork.ActivationFunction.Sigmoid); // for x y coords
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(2, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
@@ -35,7 +35,8 @@ public class SimpleAgent : MonoBehaviour
         {
             // Apply received model
             brain = new NeuralNetwork("Donkey");
-            brain.ReceiveModel(agentInterface.receivedModel, true, 0.2f, 0.2f);
+            brain.ReceiveModel(agentInterface.receivedModel);
+            brain.Mutate(0.2f, 0.2f, 2f/32f);
         }
 
         agent = new Agent(gameObject, 0f, brain);
