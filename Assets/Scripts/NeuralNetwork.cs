@@ -236,8 +236,20 @@ public class NeuralNetwork
         foreach (var layer in layers)
         {
             Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
-            newLayer.weights = layer.weights;
-            newLayer.biases = layer.biases;
+            // newLayer.weights = layer.weights;
+            // newLayer.biases = layer.biases;
+            
+            // Feat. GPT4
+            if (layer != layers[0])
+            {
+                // Input layer has no weights!
+                float[,] newWeights = new float[layer.weights.GetLength(0), layer.weights.GetLength(1)];
+                Array.Copy(layer.weights, newWeights, layer.weights.Length);
+                newLayer.weights = newWeights;
+            }
+
+            newLayer.biases = (float[])layer.biases.Clone();
+            
             newLayers.Add(newLayer);
         }
 
@@ -247,10 +259,12 @@ public class NeuralNetwork
         return newModel;
     }
 
+    /*
     public void ReceiveModel(NeuralNetwork model)
     {
         this.name = model.name;
         this.layers = model.layers;
         this.compiled = model.compiled;
     }
+    */
 }

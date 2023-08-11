@@ -27,7 +27,8 @@ public class MotherNature : MonoBehaviour
             genocideClockTimer = genocideClock;
             foreach (var agent in agents)
             {
-                print(agent.brain.layers[1].biases[0]);
+                break;
+                //(agent.brain.layers[1].biases[0]);
             }
             DayOfReckoning();
         }
@@ -52,7 +53,7 @@ public class MotherNature : MonoBehaviour
             {
                 offspring[j] = Instantiate(agentPrefab, Vector3.zero, Quaternion.identity);
                 AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
-                agentInterface.receivedModel = survivors[i].brain.DeepCopy("Billy");
+                agentInterface.receivedModel = survivors[i].brain.DeepCopy(i + ", " + j);
                 agentInterface.modelReceived = true;
             }
             Destroy(survivors[i].agentObj);
