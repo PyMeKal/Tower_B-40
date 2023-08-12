@@ -114,14 +114,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba8dee6ba46325a41a327a15e75b1fd3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  computeClock: 0.25
+  computeClock: 0.1
   baseSpeed: 3
   reward: 0
-  sensorDistance: 10
-  bombCount: 10
+  sensorDistance: 20
+  agentLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  bombLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  bombCount: 5
   bombObject: {fileID: 6508954881146788008, guid: 6c1884f7fc475fb488e8554e23d04e4a, type: 3}
-  bombVelocityMultiplier: 3
-  bombCooldown: 0.5
+  bombVelocityMultiplier: 5
+  bombCooldown: 0.75
 --- !u!50 &6698744306997204459
 Rigidbody2D:
   serializedVersion: 4

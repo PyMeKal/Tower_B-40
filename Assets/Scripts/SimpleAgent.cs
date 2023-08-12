@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Unity.Mathematics;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class SimpleAgent : MonoBehaviour
@@ -17,6 +18,7 @@ public class SimpleAgent : MonoBehaviour
     public float reward;
 
     public float sensorDistance;
+    public LayerMask agentLayer, bombLayer;
     
     public int bombCount;
     public GameObject bombObject;
@@ -42,26 +44,28 @@ public class SimpleAgent : MonoBehaviour
             // 0. transform.position -> 2
             // 1. Closest agent relative position. (0, 0) if none in sight -> 2
             // 2. Number of agents in sight / 4 -> 1
-            // 3. Sin(t) -> 1
-            // 4. BombCooldownTimer;
-            // 5. Residual A -> 1
-            // 6. Residual B -> 1
-            // (+) => 9
-            brain.AddLayer(9, NeuralNetwork.ActivationFunction.Sigmoid); // for x y coords
+            // 3. Closest bomb relative position -> 2
+            // 4. Sin(t) -> 1
+            // 5. BombCooldownTimer -> 1
+            // 6. Residual A -> 1
+            // 7. Residual B -> 1
+            // (+) => 11
+            brain.AddLayer(11, NeuralNetwork.ActivationFunction.Sigmoid); // for x y coords
             // --------------------
-            brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             // --------------------
             // Output:
             // 1. v x
             // 2. v y
             // 3. 'Plant bomb' switch: plants bomb if >0.5f
-            // 4. Bomb timer -> x4
-            // 5. Residual A
-            // 6. Residual B
-            brain.AddLayer(6, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
+            // 4. Bomb v x
+            // 5. Bomb v y
+            // 6. Residual A
+            // 7. Residual B
+            brain.AddLayer(7, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
             brain.Compile();
         }
         else
@@ -98,10 +102,10 @@ public class SimpleAgent : MonoBehaviour
             var position = transform.position;
             
             // Handle Inputs
-            // Using OverlapCircleNonAlloc instad of OverlapCircleAlloc. Feat. GPT4
+            // Using OverlapCircleNonAlloc instead of OverlapCircleAlloc. Feat. GPT4
             int maxAgents = 100; // Just an example; set this to the maximum number of agents you expect
             Collider2D[] agents = new Collider2D[maxAgents];
-            int numAgents = Physics2D.OverlapCircleNonAlloc(position, sensorDistance, agents);
+            int numAgents = Physics2D.OverlapCircleNonAlloc(position, sensorDistance, agents, agentLayer);
 
             // Now agents contains the colliders, and numAgents tells you how many there are.
             // If you want to work with a trimmed array, you can do this:
@@ -125,19 +129,46 @@ public class SimpleAgent : MonoBehaviour
                 }
             }
             
+            int maxBombs = 50; // Just an example; set this to the maximum number of agents you expect
+            Collider2D[] bombs = new Collider2D[maxBombs];
+            int numBombs = Physics2D.OverlapCircleNonAlloc(position, sensorDistance, bombs, bombLayer);
+
+            // Now agents contains the colliders, and numAgents tells you how many there are.
+            // If you want to work with a trimmed array, you can do this:
+            // Array.Resize(ref agents, numAgents);
+
+            float minDistSqrBomb = 999f;
+            Vector3 minDeltaBomb = Vector3.zero;
+
+            if (bombs.Length > 0)
+            {
+                for (int i = 0; i < numBombs; i++)
+                {
+                    Collider2D thisBomb = bombs[i];
+                    Vector3 delta = thisBomb.transform.position - position;
+                    float distSqr = (delta.x * delta.x) + (delta.y * delta.y);
+                    if (minDistSqrBomb > distSqr)
+                    {
+                        minDistSqrBomb = distSqr;
+                        minDeltaBomb = delta;
+                    }
+                }
+            }
+            
             // -------------------- COMPUTE
             float[] output = brain.Compute(new float[] {position.x, position.y, minDelta.x,
-                                                                minDelta.y, numAgents / 4f, Mathf.Sin(t),
+                                                                minDelta.y, numAgents / 4f, minDeltaBomb.x, minDeltaBomb.y,
+                                                                Mathf.Sin(t),
                                                                 bombCooldownTimer, resA, resB});
             // --------------------
             
             // Process Output
             setVelocity = output.Contains(float.NaN) ? Vector3.zero : new Vector2(output[0], output[1]) * baseSpeed;
             if(output[2] > 0.5f)
-                PlantBomb(output[3] * 4f);
+                PlantBomb(new Vector2(output[3], output[4]));
 
-            resA = output[4];
-            resB = output[5];
+            resA = output[5];
+            resB = output[6];
         }
         rb.velocity = setVelocity;
     }
@@ -147,18 +178,19 @@ public class SimpleAgent : MonoBehaviour
         agent.reward = reward;
     }
 
-    void PlantBomb(float timer)
+    void PlantBomb(Vector2 vel)
     {
         if (bombCount <= 0 || bombCooldownTimer > 0f)
             return;
         Rigidbody2D bombRb = Instantiate(bombObject, transform.position, quaternion.identity).GetComponent<Rigidbody2D>();
-        bombRb.velocity = rb.velocity * bombVelocityMultiplier;
+        bombRb.velocity = vel * bombVelocityMultiplier;
         BombBehaviour behaviour = bombRb.GetComponent<BombBehaviour>();
         behaviour.origin = this;
-        behaviour.timer = timer;
         behaviour.motherNature = motherNature;
         bombCount--;
         bombCooldownTimer = bombCooldown;
+
+        reward += 0.5f;
     }
 
     public void TakeDamage(float damage)

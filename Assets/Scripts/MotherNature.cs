@@ -57,7 +57,6 @@ public class MotherNature : MonoBehaviour
             Destroy(killList[i].agentObj);
         }
 
-        List<GameObject> newGeneration = new List<GameObject>();
         for (int i = 0; i < survivors.Count; i++)
         {
             GameObject[] offspring = new GameObject[offspringCount];

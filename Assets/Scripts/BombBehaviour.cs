@@ -17,6 +17,7 @@ public class BombBehaviour : MonoBehaviour
 
     void DeleteBomb()
     {
+        motherNature.purge -= DeleteBomb;
         Destroy(gameObject);
     }
     

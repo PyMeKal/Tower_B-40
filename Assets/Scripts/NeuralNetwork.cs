@@ -119,18 +119,25 @@ public class NeuralNetwork
             Debug.LogWarning($"Model {name} is compiled. Cannot add layers.");
             return;
         }
-
+        //--------------------------------------------
+        
         layers.Add(new Dense(neurons, actFunction));
     }
 
-    public void Compile()
+    public void Compile(bool initializeWnB=true)
     {
         if (compiled)
         {
             Debug.LogWarning($"Model {name} is already compiled. Compile call ignored.");
             return;
         }
+        //--------------------------------------------
+        
+        compiled = true;
 
+        if (!initializeWnB)
+            return;  // Skip initialization
+        
         // Initializing weights & biases for all layers except input
         for (int i = 1; i < layers.Count; i++)
         {
@@ -150,16 +157,6 @@ public class NeuralNetwork
         // First layer is the input layer. Don't do relu on it.
         for (int n = 0; n < layers[0].neurons; n++)
             layers[0].biases[n] = Random.Range(-1f, 1f);
-        compiled = true;
-    }
-
-    public void Compile(bool initializeWnB)
-    {
-        if(initializeWnB)
-            Compile();
-        else
-            compiled = true;
-        
     }
 
     public float[] Compute(float[] inputVector)
@@ -192,7 +189,6 @@ public class NeuralNetwork
 
     public void Mutate(float rangeWeights, float rangeBiases, float reshuffleChance=0.05f)
     {
-        // Debug.Log($"Mutation called. layers.Count = {layers.Count}");
         float reshuffleAbsRangeWeight = 1.5f;
         float reshuffleAbsRangeBias = 1f;
         
@@ -220,6 +216,7 @@ public class NeuralNetwork
                         if (Random.Range(0f, 1f) <= reshuffleChance)
                         {
                             layers[i].weights[n, c] = Random.Range(-reshuffleAbsRangeWeight, reshuffleAbsRangeWeight);
+                            continue;
                         }
                         layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
                     }
@@ -236,10 +233,8 @@ public class NeuralNetwork
         foreach (var layer in layers)
         {
             Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
-            // newLayer.weights = layer.weights;
-            // newLayer.biases = layer.biases;
             
-            // Feat. GPT4
+            // Making sure arrays are not aliased. Feat. GPT4
             if (layer != layers[0])
             {
                 // Input layer has no weights!
@@ -258,13 +253,4 @@ public class NeuralNetwork
         // Debug.Log("Created new model: layer count = " + newLayers.Count);
         return newModel;
     }
-
-    /*
-    public void ReceiveModel(NeuralNetwork model)
-    {
-        this.name = model.name;
-        this.layers = model.layers;
-        this.compiled = model.compiled;
-    }
-    */
 }
