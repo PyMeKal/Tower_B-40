@@ -14,7 +14,8 @@ GameObject:
   - component: {fileID: 7054222697059979958}
   - component: {fileID: 6698744306997204459}
   - component: {fileID: 1422103525232144212}
-  m_Layer: 0
+  - component: {fileID: 8737405617952473674}
+  m_Layer: 9
   m_Name: SimpleAgent
   m_TagString: Untagged
   m_Icon: {fileID: 7250588514170254948, guid: 0000000000000000d000000000000000, type: 0}
@@ -114,11 +115,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   computeClock: 0.25
-  baseSpeed: 1
-  sensorDistance: 0
-  bombCount: 0
-  bombObject: {fileID: 0}
-  bombVelocityMultiplier: 0
+  baseSpeed: 3
+  reward: 0
+  sensorDistance: 10
+  bombCount: 10
+  bombObject: {fileID: 6508954881146788008, guid: 6c1884f7fc475fb488e8554e23d04e4a, type: 3}
+  bombVelocityMultiplier: 3
+  bombCooldown: 0.5
 --- !u!50 &6698744306997204459
 Rigidbody2D:
   serializedVersion: 4
@@ -181,3 +184,24 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
+--- !u!95 &8737405617952473674
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334396965034298953}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 1a5559866a409874ab5df9ba2b53987f, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

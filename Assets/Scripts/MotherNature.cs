@@ -1,10 +1,8 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 using System.Linq;
-
 public class MotherNature : MonoBehaviour
 {
     // Simple evolution/natural selection testing script
@@ -14,10 +12,17 @@ public class MotherNature : MonoBehaviour
     public float genocideClock;
     private float genocideClockTimer;
     public int offspringCount;
+    
+    public Vector2 spawnArea;  // Center origin
+
+    public delegate void DelNonArg();
+
+    public DelNonArg purge;
 
     void Start()
     {
         genocideClockTimer = genocideClock;
+        purge += EmptyFunc;
     }
     void Update()
     {
@@ -34,8 +39,15 @@ public class MotherNature : MonoBehaviour
         }
     }
 
+    void EmptyFunc()
+    {
+        return;
+    }
+    
     private void DayOfReckoning()
     {
+        purge();
+        
         List<Agent> agentsSorted = agents.OrderByDescending(a => a.reward).ToList();
         int survivorCount = agents.Count/offspringCount;
         List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
@@ -51,7 +63,9 @@ public class MotherNature : MonoBehaviour
             GameObject[] offspring = new GameObject[offspringCount];
             for (int j = 0; j < offspringCount; j++)
             {
-                offspring[j] = Instantiate(agentPrefab, Vector3.zero, Quaternion.identity);
+                Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                    Random.Range(-spawnArea.y, spawnArea.y));
+                offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
                 AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
                 agentInterface.receivedModel = survivors[i].brain.DeepCopy(i + ", " + j);
                 agentInterface.modelReceived = true;

@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 4492773319223934508}
   - component: {fileID: 5585449676734421027}
   - component: {fileID: 2771110733055737083}
+  - component: {fileID: 8912189495979726218}
+  - component: {fileID: 1727106473168719021}
   m_Layer: 0
   m_Name: Bomb
   m_TagString: Untagged
@@ -98,6 +100,62 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca0f98477342a3748a681f1517e763fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  timer: 1
+  radius: 3
+  damage: 5
+  origin: {fileID: 0}
+  agentLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  motherNature: {fileID: 0}
+--- !u!95 &8912189495979726218
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6508954881146788008}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 01e5d2ae6af164742994958f46d39ba7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!50 &1727106473168719021
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6508954881146788008}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0.5
+  m_AngularDrag: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &7463902299123243509
 GameObject:
   m_ObjectHideFlags: 0

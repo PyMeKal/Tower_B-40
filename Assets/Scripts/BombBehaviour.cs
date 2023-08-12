@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class BombBehaviour : MonoBehaviour
@@ -8,6 +9,21 @@ public class BombBehaviour : MonoBehaviour
     public float timer;
     public float radius;
     public float damage;
+    public SimpleAgent origin;
+    
+    [SerializeField] private LayerMask agentLayer;
+
+    [HideInInspector] public MotherNature motherNature;
+
+    void DeleteBomb()
+    {
+        Destroy(gameObject);
+    }
+    
+    private void Start()
+    {
+        motherNature.purge += DeleteBomb;
+    }
 
     private void Update()
     {
@@ -20,12 +36,18 @@ public class BombBehaviour : MonoBehaviour
 
     private void Detonate()
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, radius);
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, radius, agentLayer);
+        float totalDamage = 0f;
         foreach (var col in colliders)
         {
-            col.GetComponent<SimpleAgent>().TakeDamage(damage);
+            if(col.gameObject == origin.gameObject)
+                col.GetComponent<SimpleAgent>().TakeDamage(damage * 2f);
+            else
+                col.GetComponent<SimpleAgent>().TakeDamage(damage);
+            totalDamage += damage;
         }
-        
+        origin.DamageInflicted(totalDamage);
+        motherNature.purge -= DeleteBomb;
         Destroy(gameObject);
     }
 }
