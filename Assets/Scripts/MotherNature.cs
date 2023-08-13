@@ -26,6 +26,9 @@ public class MotherNature : MonoBehaviour
     }
     void Update()
     {
+        if (agents.Count == 0)
+            return;
+        
         genocideClockTimer -= Time.deltaTime;
         if (genocideClockTimer <= 0f)
         {

@@ -4,11 +4,16 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Runtime.Serialization.Json;
 using Unity.Burst;
 using UnityEditor.Experimental.GraphView;
 using Random = UnityEngine.Random;  // Praise jetbrains
 
+using System.IO;
+
+
 // [BurstCompile]
+[System.Serializable]
 public class NeuralNetwork
 {
     public enum ActivationFunction
@@ -19,11 +24,14 @@ public class NeuralNetwork
         Tanh,
         Linear,
     }
+    
+    [System.Serializable]
     public class Dense
     {
-        public readonly int neurons;
-        public readonly ActivationFunction activationFunction;
+        public int neurons;
+        public ActivationFunction activationFunction;
         public float[,] weights;
+        public float[] weightsFlat;
         public float[] biases;
 
         private Func<float, float> relu = x => Mathf.Max(0f, x);
@@ -39,11 +47,17 @@ public class NeuralNetwork
 
         public readonly Func<float, float> actFuncDel;
         
-        public Dense(int neurons, ActivationFunction activationFunction)
+        public Dense(int neurons, ActivationFunction activationFunction, int prevNeurons=0)
         {
             this.neurons = neurons;
             this.activationFunction = activationFunction;
             biases = new float[neurons];
+
+            if (prevNeurons > 0)
+                weightsFlat = new float[neurons * prevNeurons];
+            else
+                weightsFlat = new float[]{};
+            
             actFuncDel = activationFunction switch
             {
                 ActivationFunction.ReLU => relu,
@@ -54,6 +68,7 @@ public class NeuralNetwork
             };
         }
         
+        /*
         public Dense(int neurons, string activationFunction)
         {
             this.neurons = neurons;
@@ -83,6 +98,7 @@ public class NeuralNetwork
                     break;
             }
         }
+        */
 
         public float[] Forward(float[] inputVector)
         {
@@ -102,6 +118,21 @@ public class NeuralNetwork
             }
             return outputVector;
         }
+
+        public void UnpackFlatWeights()
+        {
+            int prevNeurons = weightsFlat.Length / neurons;
+            int index = 0;
+            weights = new float[neurons, prevNeurons];
+            for (int n = 0; n < neurons; n++)
+            {
+                for (int c = 0; c < prevNeurons; c++)
+                {
+                    weights[n, c] = weightsFlat[index];
+                    index++;
+                }
+            }
+        }
     }
     
     public string name;
@@ -120,23 +151,37 @@ public class NeuralNetwork
             return;
         }
         //--------------------------------------------
-        
-        layers.Add(new Dense(neurons, actFunction));
+        layers.Add(layers.Count == 0
+            ? new Dense(neurons, actFunction)
+            : new Dense(neurons, actFunction, layers.Last().neurons));
     }
 
     public void Compile(bool initializeWnB=true)
     {
-        if (compiled)
+        void UpdateWeightsFlat()
         {
-            Debug.LogWarning($"Model {name} is already compiled. Compile call ignored.");
-            return;
+            // Create weightsFlat for saving/loading in Json
+            for (int i = 1; i < layers.Count; i++)
+            {
+                layers[i].weightsFlat = new float[layers[i].neurons * layers[i - 1].neurons];
+                int index = 0;
+                for (int n = 0; n < layers[i].neurons; n++)
+                {
+                    for (int c = 0; c < layers[i - 1].neurons; c++)
+                    {
+                        layers[i].weightsFlat[index] = layers[i].weights[n, c];
+                        index++;
+                    }
+                }
+            }
         }
-        //--------------------------------------------
-        
         compiled = true;
 
         if (!initializeWnB)
+        {
+            UpdateWeightsFlat();
             return;  // Skip initialization
+        }
         
         // Initializing weights & biases for all layers except input
         for (int i = 1; i < layers.Count; i++)
@@ -157,7 +202,10 @@ public class NeuralNetwork
         // First layer is the input layer. Don't do relu on it.
         for (int n = 0; n < layers[0].neurons; n++)
             layers[0].biases[n] = Random.Range(-1f, 1f);
+        UpdateWeightsFlat();
     }
+
+    
 
     public float[] Compute(float[] inputVector)
     {
@@ -192,7 +240,6 @@ public class NeuralNetwork
         float reshuffleAbsRangeWeight = 1.5f;
         float reshuffleAbsRangeBias = 1f;
         
-        
         for (int i = 0; i < layers.Count; i++)
         {
             // Biases
@@ -224,6 +271,7 @@ public class NeuralNetwork
             }
             
         }
+        Compile(false);
     }
 
     public NeuralNetwork DeepCopy(string newName)
@@ -253,4 +301,40 @@ public class NeuralNetwork
         // Debug.Log("Created new model: layer count = " + newLayers.Count);
         return newModel;
     }
+
+    
+    
+    public string SaveModel(string directory)
+    {
+        // Saves model as json
+        string dir = Application.dataPath + directory + "/model_" + name + "/";
+        Directory.CreateDirectory(dir);
+        for (int i = 0; i < layers.Count; i++)
+        {
+            string serialized = JsonUtility.ToJson(layers[i]);
+            string thisDirectory = dir + $"layer_{i}.json";
+            File.WriteAllText(thisDirectory, serialized);
+        }
+        File.WriteAllText(dir + "INFO.txt", $"{name}, {layers.Count}, \nname, Layers.Count");
+        return dir;
+    }
+    
+    public static NeuralNetwork LoadModel(string fullDirectory)
+    {
+        string[] info = File.ReadAllText(fullDirectory + "INFO.txt").Split(", ");
+        string name = info[0];
+        int layerCount = int.Parse(info[1]);
+        NeuralNetwork loaded = new NeuralNetwork(name);
+        for (int i = 0; i < layerCount; i++)
+        {
+            Debug.Log(fullDirectory + $"layer_{i}.json");
+            string jsonContent = File.ReadAllText(fullDirectory + $"layer_{i}.json");
+            Dense thisLayer = JsonUtility.FromJson<Dense>(jsonContent);
+            thisLayer.UnpackFlatWeights();
+            loaded.layers.Add(thisLayer);
+        }
+        loaded.Compile(false);
+        return loaded;
+    }
+    
 }

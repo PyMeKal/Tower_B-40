@@ -13,6 +13,7 @@ public class SimpleAgent : MonoBehaviour
     public Agent agent;
     private AgentInterface agentInterface;
     private MotherNature motherNature;
+    public bool enableEvolution;
     public float computeClock, baseSpeed;
 
     public float reward;
@@ -82,10 +83,16 @@ public class SimpleAgent : MonoBehaviour
         bombCooldownTimer = bombCooldown;
 
         motherNature = GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>();
-        motherNature.agents.Add(agent);
-
+        if (enableEvolution)
+            motherNature.agents.Add(agent);
+        
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        
+        string fullPath = brain.SaveModel(string.Empty);
+        NeuralNetwork loadedModel = NeuralNetwork.LoadModel(fullPath);
+        print(loadedModel.layers[1].biases[0]);
+        print(loadedModel.layers[1].weights[0, 0]);
     }
     
     void Update()
