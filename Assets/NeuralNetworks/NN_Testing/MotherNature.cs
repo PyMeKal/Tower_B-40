@@ -13,6 +13,7 @@ public class MotherNature : MonoBehaviour
     public float genocideClock;
     private float genocideClockTimer;
     public int offspringCount;
+    public int preserveCount;
     public bool saveBestModel;
     
     public Vector2 spawnArea;  // Center origin
@@ -60,7 +61,71 @@ public class MotherNature : MonoBehaviour
 
         evolutionUI.bestReward = agentsSorted[0].reward;
         evolutionUI.agentCount = agents.Count;
+
+        List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
+        List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
+        for (int i = 0; i < killList.Count; i++)
+        {
+            Destroy(killList[i].agentObj);
+        }
+
+        for (int i = 0; i < preserveCount; i++)
+        {
+            Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                Random.Range(-spawnArea.y, spawnArea.y));
+            GameObject offspring = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+            AgentInterface agentInterface = offspring.GetComponent<AgentInterface>();
+            NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+            agentInterface.receivedModel = deepCopy;
+            agentInterface.modelReceived = true;
+            agentInterface.mutate = false;
+        }
         
+        // Going for an improved selection/reproduction method, where the chance of reproducing is proportional to
+        // the agent's reward. Stolen from here: https://youtu.be/q_PtNIEDVnE (Pezzza's Work)
+        List<float> rewards = survivors.Select(a => a.reward).ToList();
+        for (int i = 0; i < agents.Count - preserveCount; i++)
+        {
+            float dice = Random.Range(0f, rewards.Sum() - 0.001f);
+            print(dice);
+            float accumulatedReward = rewards[0];
+            int index = 0;
+            while (accumulatedReward < dice && index < rewards.Count - 1)
+            {
+                index++;
+                Debug.Log($"Dice={dice}\n" +
+                                 $"rewards.Count={rewards.Count}\n" +
+                                 $"index={index}\n" +
+                                 $"accumulatedR={accumulatedReward}");
+                try
+                {
+                    accumulatedReward += rewards[index];
+                }
+                catch
+                {
+                    Debug.LogWarning($"Dice={dice}\n" +
+                                          $"rewards.Count={rewards.Count}\n" +
+                                          $"index={index}\n" +
+                                          $"accumulatedR={accumulatedReward}");
+                }
+            }
+            
+            Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                Random.Range(-spawnArea.y, spawnArea.y));
+            GameObject offspring = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+            AgentInterface agentInterface = offspring.GetComponent<AgentInterface>();
+            NeuralNetwork deepCopy = survivors[index].brain.DeepCopy(survivors[index].brain.name);
+            agentInterface.receivedModel = deepCopy;
+            agentInterface.modelReceived = true;
+            agentInterface.mutate = true;
+        }
+
+        foreach (var survivor in survivors)
+        {
+            Destroy(survivor.agentObj);
+        }
+        
+        /*
         List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
         List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
         for (int i = 0; i < killList.Count; i++)
@@ -73,19 +138,44 @@ public class MotherNature : MonoBehaviour
         
         for (int i = 0; i < survivors.Count; i++)
         {
-            GameObject[] offspring = new GameObject[offspringCount];
-            for (int j = 0; j < offspringCount; j++)
+            // 1. Preserved agents (Fittest among them)
+            /*
+            if (i < preserveCount)
             {
-                Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
-                    Random.Range(-spawnArea.y, spawnArea.y));
-                offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
-                AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
-                agentInterface.receivedModel = survivors[i].brain.DeepCopy(survivors[i].brain.name);
-                agentInterface.modelReceived = true;
+                GameObject[] offspring = new GameObject[offspringCount];
+                for (int j = 0; j < offspringCount; j++)
+                {
+                    Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                        Random.Range(-spawnArea.y, spawnArea.y));
+                    offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+                    AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
+                    NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+                    agentInterface.receivedModel = deepCopy;
+                    if(j==0)
+                        agentInterface.mutate = false;
+                    else
+                        agentInterface.mutate = true;
+                    agentInterface.modelReceived = true;
+                }
+            }
+            else
+            {
+                GameObject[] offspring = new GameObject[offspringCount];
+                for (int j = 0; j < offspringCount; j++)
+                {
+                    Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                        Random.Range(-spawnArea.y, spawnArea.y));
+                    offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+                    AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
+                    NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+                    agentInterface.receivedModel = deepCopy;
+                    agentInterface.modelReceived = true;
+                    agentInterface.mutate = true;
+                }
             }
             Destroy(survivors[i].agentObj);
         }
-
+        */
         agents = new List<Agent>();
         generation++;
         evolutionUI.generation = generation;

@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -26,6 +28,10 @@ public class MarioAgent : MonoBehaviour
     public int residualConnectionCount;
     private float[] residual;
     
+    private List<Vector3> positionHistory = new List<Vector3>();
+    private int historyCount = 100;
+    private float penalty;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -33,33 +39,33 @@ public class MarioAgent : MonoBehaviour
         computeClockTimer = computeClock;
         residual = new float[residualConnectionCount];
         
-        agent = new Agent(gameObject, 0f, brain);
-        
         agentInterface = GetComponent<AgentInterface>();
         if (!agentInterface.modelReceived)
         {
             // Create default model with randomized w&b if no model has been loaded onto the agent;
-            brain = new NeuralNetwork(gameObject.name + "_brain");
+            brain = new NeuralNetwork(gameObject.name + "_brain");  // Creates a new instance of NeuralNetwork.
+                                                                            // -> Must be before "agent" assignment!
             
             // Input:
-            // Sensor rays, xy pos, residual
+            // Sensor rays, xy pos / 10f, residual
             brain.AddLayer(rayCount + 2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Linear);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.AddLayer(2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.Compile(true, 1.5f);
+            // print(brain.layers.Count);
         }
         else
         {
             // Apply received model
-            print(agentInterface.receivedModel.layers.Count);
             brain = agentInterface.receivedModel;
-            brain.Mutate(0.2f, 0.2f, 1f/64f, 2f, 1.5f);
+            if(agentInterface.mutate)
+                brain.Mutate(0.15f, 0.15f, 1f/48f, 2f, 1.5f);
             // print(brain.name);
         }
-        
+        agent = new Agent(gameObject, 0f, brain);
         motherNature = GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>();
         if (enableEvolution)
             motherNature.agents.Add(agent);
@@ -75,7 +81,22 @@ public class MarioAgent : MonoBehaviour
             OnCompute();
         }
 
-        agent.reward = transform.position.x;
+        reward = agent.reward;
+        agent.reward = transform.position.y - penalty;
+    }
+    
+    private void FixedUpdate()
+    {
+        positionHistory.Insert(0, transform.position);
+        if (positionHistory.Count > historyCount)
+            positionHistory.Remove(positionHistory.Last());
+        penalty = 0f;
+        foreach (var pos in positionHistory.Skip(historyCount/2).ToArray())
+        {
+            Vector3 delta = pos - transform.position;
+            if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) < 0.1f)
+                penalty = 10f;
+        }
     }
 
     void OnCompute()
@@ -103,8 +124,8 @@ public class MarioAgent : MonoBehaviour
         }
 
         var position = transform.position;
-        inputVector[rayCount] = position.x;
-        inputVector[rayCount+1] = position.y;
+        inputVector[rayCount] = position.x / 10f;
+        inputVector[rayCount+1] = position.y / 10f;
 
         for (int i = 0; i < residualConnectionCount; i++)
         {

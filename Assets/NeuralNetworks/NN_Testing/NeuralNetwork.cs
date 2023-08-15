@@ -25,6 +25,16 @@ public class NeuralNetwork
         Linear,
     }
     
+    // Feat. GPT4. Clamped to prevent overflow
+    private static Func<float, float> relu = x => Mathf.Max(0f, x);
+    private static Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    private static Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    private static Func<float, float> tanh = x => {
+        if (x > 10) return 1f;
+        if (x < -10) return -1f;
+        return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);
+    };
+    
     [System.Serializable]
     public class Dense
     {
@@ -34,18 +44,7 @@ public class NeuralNetwork
         public float[] weightsFlat;
         public float[] biases;
 
-        private Func<float, float> relu = x => Mathf.Max(0f, x);
-        
-        // Feat. GPT4. Clamped to prevent overflow
-        private Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
-        private Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
-        private Func<float, float> tanh = x => {
-            if (x > 10) return 1f;
-            if (x < -10) return -1f;
-            return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);
-        };
-
-        public readonly Func<float, float> actFuncDel;
+        public Func<float, float> actFuncDel;
         
         public Dense(int neurons, ActivationFunction activationFunction, int prevNeurons=0)
         {
@@ -58,6 +57,11 @@ public class NeuralNetwork
             else
                 weightsFlat = new float[]{};
             
+            SetActFuncDel();
+        }
+
+        public void SetActFuncDel()
+        {
             actFuncDel = activationFunction switch
             {
                 ActivationFunction.ReLU => relu,
@@ -235,7 +239,7 @@ public class NeuralNetwork
         float[] logit = inputVector;
         foreach (Dense layer in layers)
         {
-            if(layer == layers[0])
+            if (layer == layers[0])
                 logit = inputVector.Select((t, c) => layers[0].actFuncDel(t + layers[0].biases[c])).ToArray();
             else
                 logit = layer.Forward(logit);
@@ -339,10 +343,10 @@ public class NeuralNetwork
         NeuralNetwork loaded = new NeuralNetwork(name);
         for (int i = 0; i < layerCount; i++)
         {
-            // Debug.Log(fullDirectory + $"layer_{i}.json");
             string jsonContent = File.ReadAllText(fullDirectory + $"layer_{i}.json");
             Dense thisLayer = JsonUtility.FromJson<Dense>(jsonContent);
             thisLayer.UnpackFlatWeights();
+            thisLayer.SetActFuncDel();
             loaded.layers.Add(thisLayer);
         }
         loaded.Compile(false);

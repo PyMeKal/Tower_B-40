@@ -97,7 +97,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 2858875358594890081}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 7f5f6ff5fce61a74280d7c92701e8503, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -177,6 +177,8 @@ MonoBehaviour:
     name: 
     layers: []
     compiled: 0
+  mutate: 0
+  directLoadModel: 
 --- !u!114 &3455890706632853635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,6 +203,6 @@ MonoBehaviour:
     m_Bits: 128
   computeClock: 0.1
   reward: 0
-  sensorRange: 5
+  sensorRange: 7
   rayCount: 20
   residualConnectionCount: 2
