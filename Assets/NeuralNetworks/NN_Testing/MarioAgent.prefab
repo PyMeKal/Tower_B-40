@@ -197,12 +197,12 @@ MonoBehaviour:
     compiled: 0
   enableEvolution: 1
   baseSpeed: 5
-  jumpVelocity: 15
+  jumpVelocity: 20
   groundLayer:
     serializedVersion: 2
     m_Bits: 128
   computeClock: 0.1
   reward: 0
-  sensorRange: 7
+  sensorRange: 5
   rayCount: 20
   residualConnectionCount: 2

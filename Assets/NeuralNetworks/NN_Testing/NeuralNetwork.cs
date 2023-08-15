@@ -26,10 +26,10 @@ public class NeuralNetwork
     }
     
     // Feat. GPT4. Clamped to prevent overflow
-    private static Func<float, float> relu = x => Mathf.Max(0f, x);
-    private static Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
-    private static Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
-    private static Func<float, float> tanh = x => {
+    public static Func<float, float> relu = x => Mathf.Max(0f, x);
+    public static Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    public static Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    public static Func<float, float> tanh = x => {
         if (x > 10) return 1f;
         if (x < -10) return -1f;
         return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);

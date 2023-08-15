@@ -11,7 +11,7 @@ public class MotherNature : MonoBehaviour
     public EvolutionUI evolutionUI;
     public int generation;
     public float genocideClock;
-    private float genocideClockTimer;
+    [HideInInspector] public float genocideClockTimer;
     public int offspringCount;
     public int preserveCount;
     public bool saveBestModel;
@@ -69,6 +69,12 @@ public class MotherNature : MonoBehaviour
             Destroy(killList[i].agentObj);
         }
 
+        if (saveBestModel)
+        {
+            survivors[0].brain.name = "Fittest";
+            survivors[0].brain.SaveModel();
+        }
+
         for (int i = 0; i < preserveCount; i++)
         {
             Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
@@ -84,30 +90,18 @@ public class MotherNature : MonoBehaviour
         // Going for an improved selection/reproduction method, where the chance of reproducing is proportional to
         // the agent's reward. Stolen from here: https://youtu.be/q_PtNIEDVnE (Pezzza's Work)
         List<float> rewards = survivors.Select(a => a.reward).ToList();
+        if (rewards.Min() < 0f)
+            rewards = rewards.Select(r => r - rewards.Min()).ToList();
         for (int i = 0; i < agents.Count - preserveCount; i++)
         {
-            float dice = Random.Range(0f, rewards.Sum() - 0.001f);
-            print(dice);
+            float dice = Random.Range(0f, rewards.Sum());
+            // print(dice);
             float accumulatedReward = rewards[0];
             int index = 0;
             while (accumulatedReward < dice && index < rewards.Count - 1)
             {
                 index++;
-                Debug.Log($"Dice={dice}\n" +
-                                 $"rewards.Count={rewards.Count}\n" +
-                                 $"index={index}\n" +
-                                 $"accumulatedR={accumulatedReward}");
-                try
-                {
-                    accumulatedReward += rewards[index];
-                }
-                catch
-                {
-                    Debug.LogWarning($"Dice={dice}\n" +
-                                          $"rewards.Count={rewards.Count}\n" +
-                                          $"index={index}\n" +
-                                          $"accumulatedR={accumulatedReward}");
-                }
+                accumulatedReward += rewards[index];
             }
             
             Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),

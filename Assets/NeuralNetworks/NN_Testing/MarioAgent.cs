@@ -51,6 +51,7 @@ public class MarioAgent : MonoBehaviour
             brain.AddLayer(rayCount + 2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Linear);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.AddLayer(2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Sigmoid);
@@ -62,7 +63,7 @@ public class MarioAgent : MonoBehaviour
             // Apply received model
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.15f, 0.15f, 1f/48f, 2f, 1.5f);
+                brain.Mutate(0.1f, 0.1f, 1f/64f, 2f, 1.5f);
             // print(brain.name);
         }
         agent = new Agent(gameObject, 0f, brain);
@@ -82,9 +83,10 @@ public class MarioAgent : MonoBehaviour
         }
 
         reward = agent.reward;
-        agent.reward = transform.position.y - penalty;
+        agent.reward = transform.position.y - penalty + peakReward;
     }
-    
+
+    private float peakReward;
     private void FixedUpdate()
     {
         positionHistory.Insert(0, transform.position);
@@ -95,7 +97,12 @@ public class MarioAgent : MonoBehaviour
         {
             Vector3 delta = pos - transform.position;
             if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) < 0.1f)
-                penalty = 10f;
+                penalty = 5f;
+        }
+
+        if (transform.position.y > 27f && peakReward <= 0f)
+        {
+            peakReward = 10 * (motherNature.genocideClock - motherNature.genocideClockTimer);
         }
     }
 
@@ -106,7 +113,7 @@ public class MarioAgent : MonoBehaviour
         for (int i = 0; i < rayCount; i++)
         {
             Vector2 dir = new Vector2(Mathf.Cos(theta), Mathf.Sin(theta));
-            RaycastHit2D col = Physics2D.Raycast(transform.position, dir, sensorRange);
+            RaycastHit2D col = Physics2D.Raycast(transform.position, dir, sensorRange, groundLayer);
 
             if (col.collider != null)
                 distances[i] = Vector3.Distance(transform.position, col.point);
@@ -121,6 +128,7 @@ public class MarioAgent : MonoBehaviour
         for (int i = 0; i < rayCount; i++)
         {
             inputVector[i] = distances[i];
+            // print(distances[i]);
         }
 
         var position = transform.position;
@@ -134,11 +142,14 @@ public class MarioAgent : MonoBehaviour
         
         float[] outputs = brain.Compute(inputVector);
 
-        rb.velocity = new Vector2((outputs[0] * 2 - 1) * baseSpeed, rb.velocity.y);
         bool onGround = 
             Physics2D.OverlapCircle(position + new Vector3(0, -0.5f), 0.5f, groundLayer) != null
             ? true
             : false;
+        if(onGround)
+            rb.velocity = new Vector2((outputs[0] * 2 - 1) * baseSpeed * 1.5f, rb.velocity.y);
+        else
+            rb.velocity = new Vector2((outputs[0] * 2 - 1) * baseSpeed, rb.velocity.y);
         if (outputs[1] > 0.75f && onGround)
             rb.velocity = new Vector2(rb.velocity.x, jumpVelocity);
 
