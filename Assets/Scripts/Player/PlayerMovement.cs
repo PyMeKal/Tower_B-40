@@ -93,7 +93,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Jump()
     {
-        bool onGround = Physics2D.OverlapCircle(feetPosision.position, 0.2f, groundLayers) != null ? true : false;
+        bool onGround = !(Physics2D.OverlapCircle(feetPosision.position, 0.2f, groundLayers) == null);
         playerAnimation.RequestAnimation<bool>("On_Ground", onGround);
 
         if (Input.GetKeyDown(KeyCode.W) && onGround)
