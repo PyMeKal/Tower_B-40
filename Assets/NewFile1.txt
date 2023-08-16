@@ -1,0 +1,1394 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float walkSpeed;
+    public float moveAccel, stopAccel, v0;
+    private float walkAccelPow;
+    public float jumpSpeed;
+    public LayerMask groundLayers;
+    [SerializeField] private Transform feetPosision;
+
+    public Transform spritesTransform;
+    private Rigidbody2D rb;
+
+    private PlayerAnimation playerAnimation;
+    private delegate void DELVoid();
+    private DELVoid flipSprite, move, jump;
+
+    [Header("Dash settings")]
+    [SerializeField] private float dashDistance, dashYSnap, upDashSpeed;
+    void Start()
+    {
+        //Scripts
+        rb = GetComponent<Rigidbody2D>();
+        playerAnimation = GetComponent<PlayerAnimation>();
+
+        //Delegates
+        flipSprite = FlipSpritesByMovement;
+        move = Move;
+        jump = Jump;
+
+        //Initial variable values
+        walkAccelPow = stopAccel;
+    }
+
+    void FixedUpdate()
+    {
+        move();
+        flipSprite();
+    }
+
+    void Update()
+    {
+        jump();
+        Dash();
+    }
+    void Empty()
+    {return;}
+
+    // Local Variables for Move()
+    Vector3 input, prevInput, deltaInput;
+    float direction = 1f;
+    void Move()
+    {
+        input = GetInputVector();
+        deltaInput = input - prevInput;
+
+        //----Walk----
+        if (input.x != 0f && prevInput.x == 0f)
+            walkAccelPow = moveAccel;
+        if (input.x == 0f && prevInput.x != 0f)
+            walkAccelPow = stopAccel;
+
+        Vector3 moveVector;
+
+        float vx = 0f;
+        if (Input.GetAxisRaw("Horizontal") != 0f)
+            direction = Input.GetAxisRaw("Horizontal");
+        //print(direction);
+        if (walkAccelPow == moveAccel)
+        {
+            vx = Mathf.Clamp(walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) + direction * v0, -walkSpeed, walkSpeed);
+            moveVector = new Vector3(vx, rb.velocity.y);
+        }
+        else
+        {
+            vx = walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) * direction;
+            moveVector = new Vector3(vx, rb.velocity.y);
+        }
+
+        rb.velocity = moveVector;
+        playerAnimation.RequestAnimation<bool>("Walk", Input.GetAxisRaw("Horizontal") != 0 ? true : false);
+        playerAnimation.RequestAnimation<bool>("Walk_play_Decel", Mathf.Abs(vx) >= walkSpeed * 0.8f ? true : false);
+        prevInput = GetInputVector();
+
+        Vector3 GetInputVector()
+        {
+            return new Vector3(Input.GetAxisRaw("Horizontal"), Input.GetAxis("Vertical")); ;
+        }
+    }
+
+    void Jump()
+    {
+        bool onGround = !(Physics2D.OverlapCircle(feetPosision.position, 0.2f, groundLayers) == null);
+        playerAnimation.RequestAnimation<bool>("On_Ground", onGround);
+
+        if (Input.GetKeyDown(KeyCode.W) && onGround)
+        {
+            //print("Jump");
+            rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+            playerAnimation.RequestAnimation<string>("Jump", string.Empty);
+        }
+
+    }
+
+    void FlipSpritesByMovement()
+    {
+        if (Input.GetAxisRaw("Horizontal") > 0)
+        {
+            spritesTransform.localEulerAngles = new Vector3(0, 0, 0);
+        }
+
+        if (Input.GetAxisRaw("Horizontal") < 0)
+        {
+            spritesTransform.localEulerAngles = new Vector3(0, 180f, 0);
+        }
+    }
+
+    void Dash()
+    {
+        DELVoid dash;
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (mousePos.y > transform.position.y - dashYSnap && mousePos.y < transform.position.y + dashYSnap)
+        {
+            dash = DashHorizontal;
+        }
+        else if (mousePos.y >= transform.position.y + dashYSnap)
+        {
+            dash = DashUp;
+        }
+        else
+        {
+            dash = Phase;
+        }
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            dash();
+        }
+
+        void DashHorizontal()
+        {
+            float direction = mousePos.x > transform.position.x ? 1f : -1f;
+            float d = dashDistance;
+            rb.MovePosition(transform.position + new Vector3(d*direction, 0));
+        }
+        void DashUp()
+        {
+            float d = Vector3.Distance(transform.position, mousePos) >= dashDistance ? dashDistance : Vector3.Distance(transform.position, mousePos);
+
+            rb.MovePosition(transform.position + Vector3.Normalize(mousePos - transform.position)*d);
+            rb.velocity = Vector3.Normalize(mousePos - transform.position)*upDashSpeed;
+
+            move = Empty;
+        }
+        if (Input.GetAxisRaw("Horizontal") != 0)
+            move = Move;
+
+        void Phase()
+        {
+
+        }
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System;
+
+public class PlayerAnimation : MonoBehaviour
+{
+
+    [SerializeField] private Animator animator;
+    private Rigidbody2D rb;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
+
+    void Update()
+    {
+        animator.SetFloat("Y_Velocity", rb.velocity.y);
+    }
+
+    public void RequestAnimation<T>(string param, T value)
+    {
+        string valString = value.ToString();
+        switch(typeof(T).ToString())
+        {
+            case "Int32":
+                int valInt;
+                Int32.TryParse(valString, out valInt);
+                animator.SetInteger(param, valInt);
+                break;
+            case "System.Boolean":
+                bool valBool;
+                Boolean.TryParse(valString, out valBool);
+                animator.SetBool(param, valBool);
+                break;
+
+            default:
+                // Trigger
+                animator.SetTrigger(param);
+                break;
+
+        }
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerEyes : MonoBehaviour
+{
+    public Transform eyesSprite, spriteObj;
+    [SerializeField] private Vector3 basePosition = Vector3.zero;
+    // See CameraFollowTarget.cs
+    private Vector3 aimedPosition;
+    [SerializeField] private float maxCalculatedDistance;
+    [SerializeField] private float speed;
+    [SerializeField] private float distanceCoeff;
+    [SerializeField] private Vector3 axisCoeff;
+
+    void FixedUpdate()
+    {
+        Vector3 cameraPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 delta = cameraPos - transform.position;
+
+        delta = delta.normalized * Mathf.Clamp(delta.magnitude, 0f, maxCalculatedDistance);
+
+        // Used to take sprite orientation into account. 1 if facing right, -1 if facing left.
+        float directionCoeff = Mathf.Abs(spriteObj.localEulerAngles.y) < 0.1f ? 1.0f : -1.0f;
+
+        // Unused
+        // Vector3 basePosWithDirection = new Vector3(basePosition.x*directionCoeff, basePosition.y);
+        aimedPosition = Vector3.Lerp(basePosition, delta, distanceCoeff);
+        
+        aimedPosition.x *= directionCoeff;
+        
+        eyesSprite.localPosition = Vector3.Lerp(basePosition, Vector3.Scale(aimedPosition, axisCoeff), speed);
+        // print(basePosition);
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerWings : MonoBehaviour
+{
+    private Vector3 initialLocalPos;
+    [HideInInspector] public Vector3 targetPos;
+    [SerializeField] private Transform playerSprite;
+    [SerializeField] private float hoverMagnitude, hoverFrequency, followSpeed;
+    [HideInInspector] public float t;
+    void Start()
+    {
+        initialLocalPos = transform.position - playerSprite.position;
+    }
+
+    void FixedUpdate()
+    {
+        t += Time.deltaTime;
+        // To prevent t from getting too big
+        if(t>=60f*Mathf.PI)
+        {
+            t = t-60f*Mathf.PI;
+        }
+
+        Vector3 directionVector = playerSprite.localEulerAngles.y == 0 ? new Vector3(1f, 1f, 1f) : new Vector3(-1f, 1f, 1f);
+        targetPos = playerSprite.position + Vector3.Scale(initialLocalPos, directionVector) + new Vector3(0, Mathf.Sin(t*hoverFrequency)*hoverMagnitude);
+
+        transform.position = Vector3.Lerp(transform.position, targetPos, followSpeed);
+
+        //Rotation
+        if(Vector2.Distance(transform.position, targetPos) < 1f)
+            transform.localEulerAngles = playerSprite.localEulerAngles;
+        else
+        {
+            if(transform.position.x < targetPos.x)
+                transform.localEulerAngles = new Vector3(0,0,0);
+            else
+                transform.localEulerAngles = new Vector3(0,180f,0);
+        }
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraFollowTarget : MonoBehaviour
+{
+    public Transform target;
+    [SerializeField] private float speed;
+
+    // Used for maintaining position.z=-10 
+    [SerializeField] private Vector3 offset;
+
+    // basePosition: the camera's aim pivot-point.
+    // aimedPosition: the camera's aimed final target position.
+    private Vector3 basePosition, aimedPosition;
+    // Used for calculating aimedPosition.
+    [SerializeField] private float sightDistanceCoeff;
+    void FixedUpdate()
+    {
+        basePosition = target.position + offset;
+
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        aimedPosition = Vector3.Lerp(basePosition, mousePosition, sightDistanceCoeff);
+
+        transform.position =  Vector3.Lerp(transform.position, aimedPosition, speed);
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraSyncSize : MonoBehaviour
+{
+    public Camera syncTarget;
+    void Awake()
+    {
+        GetComponent<Camera>().orthographicSize = syncTarget.orthographicSize;
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SimpleCameraController : MonoBehaviour
+{
+    public float speed;
+    public float zoomSpeed;
+    private Camera thisCamera;
+    public bool followBestAgent;
+
+    void Start()
+    {
+        thisCamera = GetComponent<Camera>();
+    }
+    void Update()
+    {
+        Vector3 moveVector = new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")) * (speed * Time.unscaledDeltaTime);
+        transform.Translate(moveVector);
+
+        if (Input.mouseScrollDelta.y < 0f) thisCamera.orthographicSize += zoomSpeed * Time.unscaledDeltaTime;
+        else if (Input.mouseScrollDelta.y > 0f) thisCamera.orthographicSize -= zoomSpeed * Time.unscaledDeltaTime;
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Agent
+{
+    public GameObject agentObj;
+    public float reward;
+    public NeuralNetwork brain;
+
+    public Agent(GameObject agentObj, float reward, NeuralNetwork brain)
+    {
+        this.agentObj = agentObj;
+        this.reward = reward;
+        this.brain = brain;
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System;
+using Unity.VisualScripting;
+
+public class AgentInterface : MonoBehaviour
+{
+    public Agent agent;
+    public bool modelReceived;
+    public NeuralNetwork receivedModel;
+    public bool mutate;
+    public string directLoadModel;
+
+    private void Awake()
+    {
+        if (directLoadModel != string.Empty)
+        {
+            modelReceived = true;
+            receivedModel = NeuralNetwork.LoadModel(NeuralNetwork.DefaultDirectory + directLoadModel);
+            // print("Load successful");
+        }
+    }
+}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+public class BombBehaviour : MonoBehaviour
+{
+    public float timer;
+    public float radius;
+    public float damage;
+    public SimpleAgent origin;
+    
+    [SerializeField] private LayerMask agentLayer;
+
+    [HideInInspector] public MotherNature motherNature;
+
+    void DeleteBomb()
+    {
+        motherNature.purge -= DeleteBomb;
+        Destroy(gameObject);
+    }
+    
+    private void Start()
+    {
+        motherNature.purge += DeleteBomb;
+    }
+
+    private void Update()
+    {
+        timer -= Time.deltaTime;
+        if (timer <= 0)
+        {
+            Detonate();
+        }
+    }
+
+    private void Detonate()
+    {
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, radius, agentLayer);
+        float totalDamage = 0f;
+        foreach (var col in colliders)
+        {
+            if(col.gameObject == origin.gameObject)
+                col.GetComponent<SimpleAgent>().TakeDamage(damage * 2f);
+            else
+                col.GetComponent<SimpleAgent>().TakeDamage(damage);
+            totalDamage += damage;
+        }
+        origin.DamageInflicted(totalDamage);
+        motherNature.purge -= DeleteBomb;
+        Destroy(gameObject);
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class EvolutionUI : MonoBehaviour
+{
+    public int generation;
+    public float bestReward, clock;
+    public int agentCount;
+
+    public TextMeshProUGUI text;
+
+    // Update is called once per frame
+    void Update()
+    {
+        text.text = $"Generation {generation} : {clock}\n" +
+                    $"Best Reward: {bestReward}\n" +
+                    $"\n" +
+                    $"Agent Count: {agentCount}";
+    }
+}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+public class MarioAgent : MonoBehaviour
+{
+    public NeuralNetwork brain;
+    public Agent agent;
+    public bool enableEvolution=true;
+    private AgentInterface agentInterface;
+    public float baseSpeed;
+    public float jumpVelocity;
+    public LayerMask groundLayer;
+    public float computeClock;
+    private float computeClockTimer;
+    public float reward;
+    
+
+    private Rigidbody2D rb;
+    private MotherNature motherNature;
+
+    public float sensorRange;
+    public int rayCount;
+    public int residualConnectionCount;
+    private float[] residual;
+    
+    private List<Vector3> positionHistory = new List<Vector3>();
+    private int historyCount = 100;
+    private float penalty;
+    
+    // Start is called before the first frame update
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        computeClockTimer = computeClock;
+        residual = new float[residualConnectionCount];
+        
+        agentInterface = GetComponent<AgentInterface>();
+        if (!agentInterface.modelReceived)
+        {
+            // Create default model with randomized w&b if no model has been loaded onto the agent;
+            brain = new NeuralNetwork(gameObject.name + "_brain");  // Creates a new instance of NeuralNetwork.
+                                                                            // -> Must be before "agent" assignment!
+            
+            // Input:
+            // Sensor rays, xy pos / 10f, residual
+            brain.AddLayer(rayCount + 2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Linear);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.AddLayer(2 + residualConnectionCount, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.Compile(true, 1.5f);
+            // print(brain.layers.Count);
+        }
+        else
+        {
+            // Apply received model
+            brain = agentInterface.receivedModel;
+            if(agentInterface.mutate)
+                brain.Mutate(0.1f, 0.1f, 1f/64f, 2f, 1.5f);
+            // print(brain.name);
+        }
+        agent = new Agent(gameObject, 0f, brain);
+        motherNature = GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>();
+        if (enableEvolution)
+            motherNature.agents.Add(agent);
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        computeClockTimer -= Time.deltaTime;
+        if (computeClockTimer <= 0f)
+        {
+            computeClockTimer = computeClock;
+            OnCompute();
+        }
+
+        reward = agent.reward;
+        agent.reward = transform.position.y - penalty + peakReward;
+    }
+
+    private float peakReward;
+    private void FixedUpdate()
+    {
+        positionHistory.Insert(0, transform.position);
+        if (positionHistory.Count > historyCount)
+            positionHistory.Remove(positionHistory.Last());
+        penalty = 0f;
+        foreach (var pos in positionHistory.Skip(historyCount/2).ToArray())
+        {
+            Vector3 delta = pos - transform.position;
+            if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) < 0.1f)
+                penalty = 5f;
+        }
+
+        if (transform.position.y > 27f && peakReward <= 0f)
+        {
+            peakReward = 10 * (motherNature.genocideClock - motherNature.genocideClockTimer);
+        }
+    }
+
+    void OnCompute()
+    {
+        float theta = 0f;
+        float[] distances = new float[rayCount];
+        for (int i = 0; i < rayCount; i++)
+        {
+            Vector2 dir = new Vector2(Mathf.Cos(theta), Mathf.Sin(theta));
+            RaycastHit2D col = Physics2D.Raycast(transform.position, dir, sensorRange, groundLayer);
+
+            if (col.collider != null)
+                distances[i] = Vector3.Distance(transform.position, col.point);
+            else
+                distances[i] = sensorRange + 0.5f;
+            
+            theta += 2 * Mathf.PI / rayCount;
+        }
+        
+        
+        float[] inputVector = new float[rayCount + 2 + residualConnectionCount];
+        for (int i = 0; i < rayCount; i++)
+        {
+            inputVector[i] = distances[i];
+            // print(distances[i]);
+        }
+
+        var position = transform.position;
+        inputVector[rayCount] = position.x / 10f;
+        inputVector[rayCount+1] = position.y / 10f;
+
+        for (int i = 0; i < residualConnectionCount; i++)
+        {
+            inputVector[rayCount + 2 + i] = residual[i];
+        }
+        
+        float[] outputs = brain.Compute(inputVector);
+
+        bool onGround = 
+            Physics2D.OverlapCircle(position + new Vector3(0, -0.5f), 0.5f, groundLayer) != null
+            ? true
+            : false;
+        if(onGround)
+            rb.velocity = new Vector2((outputs[0] * 2 - 1) * baseSpeed * 1.5f, rb.velocity.y);
+        else
+            rb.velocity = new Vector2((outputs[0] * 2 - 1) * baseSpeed, rb.velocity.y);
+        if (outputs[1] > 0.75f && onGround)
+            rb.velocity = new Vector2(rb.velocity.x, jumpVelocity);
+
+        for (int i = 0; i < residualConnectionCount; i++)
+        {
+            residual[i] = outputs[2 + i];
+        }
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+using System.Linq;
+public class MotherNature : MonoBehaviour
+{
+    // Simple evolution/natural selection testing script
+    public List<Agent> agents = new List<Agent>();
+    public GameObject agentPrefab;
+    public EvolutionUI evolutionUI;
+    public int generation;
+    public float genocideClock;
+    [HideInInspector] public float genocideClockTimer;
+    public int offspringCount;
+    public int preserveCount;
+    public bool saveBestModel;
+    
+    public Vector2 spawnArea;  // Center origin
+
+    public delegate void DelNonArg();
+
+    public DelNonArg purge;
+
+    void Start()
+    {
+        genocideClockTimer = genocideClock;
+        purge += EmptyFunc;
+    }
+    void Update()
+    {
+        if (agents.Count == 0)
+            return;
+        
+        genocideClockTimer -= Time.deltaTime;
+        if (genocideClockTimer <= 0f)
+        {
+            genocideClockTimer = genocideClock;
+            foreach (var agent in agents)
+            {
+                break;
+                //(agent.brain.layers[1].biases[0]);
+            }
+            DayOfReckoning();
+        }
+
+        evolutionUI.clock = Mathf.Round(genocideClockTimer*10f)/10f;
+    }
+
+    void EmptyFunc()
+    {
+        return;
+    }
+    
+    private void DayOfReckoning()
+    {
+        purge();
+        
+        List<Agent> agentsSorted = agents.OrderByDescending(a => a.reward).ToList();
+        int survivorCount = agents.Count/offspringCount;
+
+        evolutionUI.bestReward = agentsSorted[0].reward;
+        evolutionUI.agentCount = agents.Count;
+
+        List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
+        List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
+        for (int i = 0; i < killList.Count; i++)
+        {
+            Destroy(killList[i].agentObj);
+        }
+
+        if (saveBestModel)
+        {
+            survivors[0].brain.name = "Fittest";
+            survivors[0].brain.SaveModel();
+        }
+
+        for (int i = 0; i < preserveCount; i++)
+        {
+            Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                Random.Range(-spawnArea.y, spawnArea.y));
+            GameObject offspring = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+            AgentInterface agentInterface = offspring.GetComponent<AgentInterface>();
+            NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+            agentInterface.receivedModel = deepCopy;
+            agentInterface.modelReceived = true;
+            agentInterface.mutate = false;
+        }
+        
+        // Going for an improved selection/reproduction method, where the chance of reproducing is proportional to
+        // the agent's reward. Stolen from here: https://youtu.be/q_PtNIEDVnE (Pezzza's Work)
+        List<float> rewards = survivors.Select(a => a.reward).ToList();
+        if (rewards.Min() < 0f)
+            rewards = rewards.Select(r => r - rewards.Min()).ToList();
+        for (int i = 0; i < agents.Count - preserveCount; i++)
+        {
+            float dice = Random.Range(0f, rewards.Sum());
+            // print(dice);
+            float accumulatedReward = rewards[0];
+            int index = 0;
+            while (accumulatedReward < dice && index < rewards.Count - 1)
+            {
+                index++;
+                accumulatedReward += rewards[index];
+            }
+            
+            Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                Random.Range(-spawnArea.y, spawnArea.y));
+            GameObject offspring = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+            AgentInterface agentInterface = offspring.GetComponent<AgentInterface>();
+            NeuralNetwork deepCopy = survivors[index].brain.DeepCopy(survivors[index].brain.name);
+            agentInterface.receivedModel = deepCopy;
+            agentInterface.modelReceived = true;
+            agentInterface.mutate = true;
+        }
+
+        foreach (var survivor in survivors)
+        {
+            Destroy(survivor.agentObj);
+        }
+        
+        /*
+        List<Agent> survivors = agentsSorted.Where((a, c) => c + 1 <= survivorCount).ToList();
+        List<Agent> killList = agentsSorted.Where((a, c) => c + 1 > survivorCount).ToList();
+        for (int i = 0; i < killList.Count; i++)
+        {
+            Destroy(killList[i].agentObj);
+        }
+
+        survivors[0].brain.name = "Fittest";
+        survivors[0].brain.SaveModel();
+        
+        for (int i = 0; i < survivors.Count; i++)
+        {
+            // 1. Preserved agents (Fittest among them)
+            /*
+            if (i < preserveCount)
+            {
+                GameObject[] offspring = new GameObject[offspringCount];
+                for (int j = 0; j < offspringCount; j++)
+                {
+                    Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                        Random.Range(-spawnArea.y, spawnArea.y));
+                    offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+                    AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
+                    NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+                    agentInterface.receivedModel = deepCopy;
+                    if(j==0)
+                        agentInterface.mutate = false;
+                    else
+                        agentInterface.mutate = true;
+                    agentInterface.modelReceived = true;
+                }
+            }
+            else
+            {
+                GameObject[] offspring = new GameObject[offspringCount];
+                for (int j = 0; j < offspringCount; j++)
+                {
+                    Vector3 spawnPoint = new Vector3(Random.Range(-spawnArea.x, spawnArea.x),
+                        Random.Range(-spawnArea.y, spawnArea.y));
+                    offspring[j] = Instantiate(agentPrefab, spawnPoint, Quaternion.identity);
+                    AgentInterface agentInterface = offspring[j].GetComponent<AgentInterface>();
+                    NeuralNetwork deepCopy = survivors[i].brain.DeepCopy(survivors[i].brain.name);
+                    agentInterface.receivedModel = deepCopy;
+                    agentInterface.modelReceived = true;
+                    agentInterface.mutate = true;
+                }
+            }
+            Destroy(survivors[i].agentObj);
+        }
+        */
+        agents = new List<Agent>();
+        generation++;
+        evolutionUI.generation = generation;
+    }
+}
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEditor;
+using System;
+using System.Runtime.Serialization.Json;
+using Unity.Burst;
+using UnityEditor.Experimental.GraphView;
+using Random = UnityEngine.Random;  // Praise jetbrains
+
+using System.IO;
+
+
+// [BurstCompile]
+[System.Serializable]
+public class NeuralNetwork
+{
+    public enum ActivationFunction
+    {
+        Sigmoid,
+        ReLU,
+        Swish,
+        Tanh,
+        Linear,
+    }
+    
+    // Feat. GPT4. Clamped to prevent overflow
+    public static Func<float, float> relu = x => Mathf.Max(0f, x);
+    public static Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    public static Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
+    public static Func<float, float> tanh = x => {
+        if (x > 10) return 1f;
+        if (x < -10) return -1f;
+        return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);
+    };
+    
+    [System.Serializable]
+    public class Dense
+    {
+        public int neurons;
+        public ActivationFunction activationFunction;
+        public float[,] weights;
+        public float[] weightsFlat;
+        public float[] biases;
+
+        public Func<float, float> actFuncDel;
+        
+        public Dense(int neurons, ActivationFunction activationFunction, int prevNeurons=0)
+        {
+            this.neurons = neurons;
+            this.activationFunction = activationFunction;
+            biases = new float[neurons];
+
+            if (prevNeurons > 0)
+                weightsFlat = new float[neurons * prevNeurons];
+            else
+                weightsFlat = new float[]{};
+            
+            SetActFuncDel();
+        }
+
+        public void SetActFuncDel()
+        {
+            actFuncDel = activationFunction switch
+            {
+                ActivationFunction.ReLU => relu,
+                ActivationFunction.Sigmoid => sigmoid,
+                ActivationFunction.Swish => swish,
+                ActivationFunction.Tanh => tanh,
+                _ => x => x,  // Default
+            };
+        }
+        
+        /*
+        public Dense(int neurons, string activationFunction)
+        {
+            this.neurons = neurons;
+            //this.activationFunction = activationFunction;
+            biases = new float[neurons];
+            switch (activationFunction)
+            {
+                case "relu":
+                    this.activationFunction = ActivationFunction.ReLU;
+                    actFuncDel = relu;
+                    break;
+                case "sigmoid":
+                    this.activationFunction = ActivationFunction.Sigmoid;
+                    actFuncDel = sigmoid;
+                    break;
+                case "swish":
+                    this.activationFunction = ActivationFunction.Swish;
+                    actFuncDel = swish;
+                    break;
+                case "tanh":
+                    this.activationFunction = ActivationFunction.Tanh;
+                    actFuncDel = tanh;
+                    break;
+                default:
+                    this.activationFunction = ActivationFunction.Linear;
+                    actFuncDel = x => x;
+                    break;
+            }
+        }
+        */
+
+        public float[] Forward(float[] inputVector)
+        {
+            float[] outputVector = new float[neurons];
+            for (int n = 0; n < neurons; n++)
+            {
+                // Apparently this is a LINQ expression. Looks slick.
+                float sum = inputVector.Select((t, c) => t * weights[n, c]).Sum();
+                
+                float y = actFuncDel(sum + biases[n]);
+                if (float.IsNaN(y))
+                {
+                    Debug.LogWarning($"NaN occured (y) in Dense calculation: sum: {sum}, act-func: {activationFunction.ToString()}\n" +
+                                     $"inputVector: {String.Join(", ", inputVector.Select(f => f.ToString()))}");
+                }
+                outputVector[n] = y;
+            }
+            return outputVector;
+        }
+
+        public void UnpackFlatWeights()
+        {
+            int prevNeurons = weightsFlat.Length / neurons;
+            int index = 0;
+            weights = new float[neurons, prevNeurons];
+            for (int n = 0; n < neurons; n++)
+            {
+                for (int c = 0; c < prevNeurons; c++)
+                {
+                    weights[n, c] = weightsFlat[index];
+                    index++;
+                }
+            }
+        }
+    }
+    
+    public string name;
+    public List<Dense> layers = new List<Dense>();
+    public bool compiled = false;
+    
+    public static readonly string DefaultDirectory = Application.dataPath + "/NeuralNetworks";
+    
+    public NeuralNetwork(string name)
+    {
+        this.name = name;
+    }
+
+    public void AddLayer(int neurons, ActivationFunction actFunction)
+    {
+        if (compiled)
+        {
+            Debug.LogWarning($"Model {name} is compiled. Cannot add layers.");
+            return;
+        }
+        //--------------------------------------------
+        layers.Add(layers.Count == 0
+            ? new Dense(neurons, actFunction)
+            : new Dense(neurons, actFunction, layers.Last().neurons));
+    }
+
+    public void Compile(bool initializeWnB=true, float scale=1f)
+    {
+        
+        compiled = true;
+
+        if (!initializeWnB)
+            return;  // Skip initialization
+        
+        
+        // Initializing weights & biases for all layers except input
+        for (int i = 1; i < layers.Count; i++)
+        {
+            Dense thisLayer = layers[i];
+            thisLayer.weights = new float[thisLayer.neurons, layers[i - 1].neurons];
+            
+            for (int n = 0; n < thisLayer.neurons; n++)  // n for neuron
+            {
+                for (int c = 0; c < layers[i - 1].neurons; c++)  // c for connection
+                {
+                    // Random within interval: [-1, 1]
+                    thisLayer.weights[n, c] = Random.Range(-scale, scale);
+                }
+                thisLayer.biases[n] = Random.Range(-scale, scale);
+            }
+        }
+        // First layer is the input layer. Don't do relu on it.
+        for (int n = 0; n < layers[0].neurons; n++)
+            layers[0].biases[n] = Random.Range(-scale, scale);
+    }
+
+    void PackFlatWeights()
+    {
+        // Create weightsFlat for saving/loading in Json
+        for (int i = 1; i < layers.Count; i++)
+        {
+            layers[i].weightsFlat = new float[layers[i].neurons * layers[i - 1].neurons];
+            int index = 0;
+            for (int n = 0; n < layers[i].neurons; n++)
+            {
+                for (int c = 0; c < layers[i - 1].neurons; c++)
+                {
+                    layers[i].weightsFlat[index] = layers[i].weights[n, c];
+                    index++;
+                }
+            }
+        }
+    }
+
+    public float[] Compute(float[] inputVector)
+    {
+        if (!compiled)
+        {
+            Debug.LogWarning($"Model {name} is not compiled. Compute call ignored.");
+            return new float[]{};
+        }
+
+        try
+        {
+            if (layers[0].neurons != inputVector.Length)
+            {
+                throw new Exception(
+                    $"ERROR: Input vector size ({inputVector.Length}) does not match input layer size ({layers[0].neurons}).");
+
+            }
+        }
+        catch
+        {
+            Debug.Log(layers.Count);
+        }
+       
+        
+        //--------------------------------------------
+        
+        float[] logit = inputVector;
+        foreach (Dense layer in layers)
+        {
+            if (layer == layers[0])
+                logit = inputVector.Select((t, c) => layers[0].actFuncDel(t + layers[0].biases[c])).ToArray();
+            else
+                logit = layer.Forward(logit);
+        }
+
+        return logit;
+    }
+
+    public void Mutate(float rangeWeights, float rangeBiases, float reshuffleChance=0.05f, 
+        float reshuffleScaleWeight=1.5f, float reshuffleScaleBias=1f)
+    {
+        for (int i = 0; i < layers.Count; i++)
+        {
+            // Biases
+            for (int n = 0; n < layers[i].biases.Length; n++)
+            {
+                if (Random.Range(0f, 1f) <= reshuffleChance)
+                {
+                    layers[i].biases[n] = Random.Range(-reshuffleScaleBias, reshuffleScaleBias);
+                    continue;
+                }
+                layers[i].biases[n] += Random.Range(-rangeBiases, rangeBiases);
+            }
+            
+            // Weights
+            if (i > 0)
+            {
+                for (int n = 0; n < layers[i].neurons; n++)
+                {
+                    for (int c = 0; c < layers[i - 1].neurons; c++)
+                    {
+                        if (Random.Range(0f, 1f) <= reshuffleChance)
+                        {
+                            layers[i].weights[n, c] = Random.Range(-reshuffleScaleWeight, reshuffleScaleWeight);
+                            continue;
+                        }
+                        layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
+                    }
+                }
+            }
+            
+        }
+        Compile(false);
+    }
+
+    public NeuralNetwork DeepCopy(string newName)
+    {
+        NeuralNetwork newModel = new NeuralNetwork(newName);
+        List<Dense> newLayers = new List<Dense>();
+        foreach (var layer in layers)
+        {
+            Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
+            
+            // Making sure arrays are not aliased. Feat. GPT4
+            if (layer != layers[0])
+            {
+                // Input layer has no weights!
+                float[,] newWeights = new float[layer.weights.GetLength(0), layer.weights.GetLength(1)];
+                Array.Copy(layer.weights, newWeights, layer.weights.Length);
+                newLayer.weights = newWeights;
+            }
+
+            newLayer.biases = (float[])layer.biases.Clone();
+            
+            newLayers.Add(newLayer);
+        }
+
+        newModel.layers = newLayers;
+        newModel.Compile(false);
+        // Debug.Log("Created new model: layer count = " + newLayers.Count);
+        return newModel;
+    }
+
+    
+    
+    public string SaveModel(string directory="DEFAULT")
+    {
+        PackFlatWeights();
+
+        if (directory is "" or "DEFAULT" or "default")
+            directory = DefaultDirectory;
+        
+        // Saves model as json
+        string dir = directory + "/model_" + name + "/";
+        Directory.CreateDirectory(dir);
+        for (int i = 0; i < layers.Count; i++)
+        {
+            string serialized = JsonUtility.ToJson(layers[i]);
+            string thisDirectory = dir + $"layer_{i}.json";
+            File.WriteAllText(thisDirectory, serialized);
+        }
+        File.WriteAllText(dir + "INFO.txt", $"{name}, {layers.Count}, \nname, Layers.Count");
+        return dir;
+    }
+    
+    public static NeuralNetwork LoadModel(string fullDirectory)
+    {
+        string[] info = File.ReadAllText(fullDirectory + "INFO.txt").Split(", ");
+        string name = info[0];
+        int layerCount = int.Parse(info[1]);
+        NeuralNetwork loaded = new NeuralNetwork(name);
+        for (int i = 0; i < layerCount; i++)
+        {
+            string jsonContent = File.ReadAllText(fullDirectory + $"layer_{i}.json");
+            Dense thisLayer = JsonUtility.FromJson<Dense>(jsonContent);
+            thisLayer.UnpackFlatWeights();
+            thisLayer.SetActFuncDel();
+            loaded.layers.Add(thisLayer);
+        }
+        loaded.Compile(false);
+        return loaded;
+    }
+    
+}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using Unity.Mathematics;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+public class SimpleAgent : MonoBehaviour
+{
+    public NeuralNetwork brain;
+    public Agent agent;
+    private AgentInterface agentInterface;
+    private MotherNature motherNature;
+    public bool enableEvolution;
+    public float computeClock, baseSpeed;
+    public float reward;
+
+    public float sensorDistance;
+    public LayerMask agentLayer;
+    
+    /*
+    public LayerMask agentLayer, bombLayer;
+    public int bombCount;
+    public GameObject bombObject;
+    public float bombVelocityMultiplier;
+    public float bombCooldown;
+    private float bombCooldownTimer;
+    */
+    
+    private float computeClockTimer, t, resA, resB;
+
+    private Vector2 setVelocity;
+    private Rigidbody2D rb;
+    private Animator anim;
+
+    void CreateBomberAgentModel()
+    {
+        // Input:
+        // 0. transform.position -> 2
+        // 1. Closest agent relative position. (0, 0) if none in sight -> 2
+        // 2. Number of agents in sight / 4 -> 1
+        // 3. Closest bomb relative position -> 2
+        // 4. Sin(t) -> 1
+        // 5. BombCooldownTimer -> 1
+        // 6. Residual A -> 1
+        // 7. Residual B -> 1
+        // (+) => 11
+        brain.AddLayer(11, NeuralNetwork.ActivationFunction.Sigmoid); // for x y coords
+        // --------------------
+        brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+        brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+        brain.AddLayer(32, NeuralNetwork.ActivationFunction.Sigmoid);
+        brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+        brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+        // --------------------
+        // Output:
+        // 1. v x
+        // 2. v y
+        // 3. 'Plant bomb' switch: plants bomb if >0.5f
+        // 4. Bomb v x
+        // 5. Bomb v y
+        // 6. Residual A
+        // 7. Residual B
+        brain.AddLayer(7, NeuralNetwork.ActivationFunction.Tanh); // output -> velocity [-1, 1]
+        brain.Compile();
+    }
+    
+    void Start()
+    {
+        agentInterface = GetComponent<AgentInterface>();
+        if (!agentInterface.modelReceived)
+        {
+            // Create default model with randomized w&b if no model has been loaded onto the agent;
+            brain = new NeuralNetwork(gameObject.name + "_brain");
+            
+            // CreateBomberAgentModel();
+            brain.AddLayer(2, NeuralNetwork.ActivationFunction.Linear );
+        }
+        else
+        {
+            // Apply received model
+            brain = agentInterface.receivedModel;
+            brain.Mutate(0.2f, 0.2f, 1f/64f);
+            // print(brain.name);
+        }
+
+        agent = new Agent(gameObject, 0f, brain);
+        
+        computeClockTimer = computeClock;
+        // bombCooldownTimer = bombCooldown;
+
+        motherNature = GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>();
+        if (enableEvolution)
+            motherNature.agents.Add(agent);
+        
+        rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        
+        /* Save + Load model testing
+        string fullPath = brain.SaveModel();
+        NeuralNetwork loadedModel = NeuralNetwork.LoadModel(fullPath);
+        print(loadedModel.layers[1].biases[0]);
+        print(loadedModel.layers[1].weights[0, 0]);
+        */
+    }
+    
+    void Update()
+    {
+        EvaluateReward();
+        
+        computeClockTimer -= Time.deltaTime;
+        // bombCooldownTimer -= Time.deltaTime;
+        t += Time.deltaTime;
+        
+        if (computeClockTimer <= 0f)
+        {
+            computeClockTimer = computeClock;
+            var position = transform.position;
+            
+            /*
+            // Handle Inputs
+            // Using OverlapCircleNonAlloc instead of OverlapCircleAlloc. Feat. GPT4
+            int maxAgents = 100; // Just an example; set this to the maximum number of agents you expect
+            Collider2D[] agents = new Collider2D[maxAgents];
+            int numAgents = Physics2D.OverlapCircleNonAlloc(position, sensorDistance, agents, agentLayer);
+
+            // Now agents contains the colliders, and numAgents tells you how many there are.
+            // If you want to work with a trimmed array, you can do this:
+            // Array.Resize(ref agents, numAgents);
+
+            float minDistSqr = 999f;
+            Vector3 minDelta = Vector3.zero;
+
+            if (agents.Length > 0)
+            {
+                for (int i = 0; i < numAgents; i++)
+                {
+                    Collider2D thisAgent = agents[i];
+                    Vector3 delta = thisAgent.transform.position - position;
+                    float distSqr = (delta.x * delta.x) + (delta.y * delta.y);
+                    if (minDistSqr > distSqr)
+                    {
+                        minDistSqr = distSqr;
+                        minDelta = delta;
+                    }
+                }
+            }
+            
+            int maxBombs = 50; // Just an example; set this to the maximum number of agents you expect
+            Collider2D[] bombs = new Collider2D[maxBombs];
+            int numBombs = Physics2D.OverlapCircleNonAlloc(position, sensorDistance, bombs, bombLayer);
+
+            // Now agents contains the colliders, and numAgents tells you how many there are.
+            // If you want to work with a trimmed array, you can do this:
+            // Array.Resize(ref agents, numAgents);
+
+            float minDistSqrBomb = 999f;
+            Vector3 minDeltaBomb = Vector3.zero;
+
+            if (bombs.Length > 0)
+            {
+                for (int i = 0; i < numBombs; i++)
+                {
+                    Collider2D thisBomb = bombs[i];
+                    Vector3 delta = thisBomb.transform.position - position;
+                    float distSqr = (delta.x * delta.x) + (delta.y * delta.y);
+                    if (minDistSqrBomb > distSqr)
+                    {
+                        minDistSqrBomb = distSqr;
+                        minDeltaBomb = delta;
+                    }
+                }
+            }
+            
+            // -------------------- COMPUTE
+            float[] output = brain.Compute(new float[] {position.x, position.y, minDelta.x,
+                                                                minDelta.y, numAgents / 4f, minDeltaBomb.x, minDeltaBomb.y,
+                                                                Mathf.Sin(t),
+                                                                bombCooldownTimer, resA, resB});
+            // --------------------
+            
+            // Process Output
+            setVelocity = output.Contains(float.NaN) ? Vector3.zero : new Vector2(output[0], output[1]) * baseSpeed;
+            if(output[2] > 0.5f)
+                PlantBomb(new Vector2(output[3], output[4]));
+
+            resA = output[5];
+            resB = output[6];
+            */
+            
+            // float[] output = brain.Compute()
+            
+        }
+        rb.velocity = setVelocity;
+    }
+
+    void EvaluateReward()
+    {
+        agent.reward = reward;
+    }
+
+    /*
+    void PlantBomb(Vector2 vel)
+    {
+        if (bombCount <= 0 || bombCooldownTimer > 0f)
+            return;
+        Rigidbody2D bombRb = Instantiate(bombObject, transform.position, quaternion.identity).GetComponent<Rigidbody2D>();
+        bombRb.velocity = vel * bombVelocityMultiplier;
+        BombBehaviour behaviour = bombRb.GetComponent<BombBehaviour>();
+        behaviour.origin = this;
+        behaviour.motherNature = motherNature;
+        bombCount--;
+        bombCooldownTimer = bombCooldown;
+
+        // reward -= 0.5f;
+    }
+    */
+    
+    public void TakeDamage(float damage)
+    {
+        reward -= damage;
+        anim.SetTrigger("TakeDamage");
+    }
+
+    public void DamageInflicted(float totalDamage)
+    {
+        reward += totalDamage;
+    }
+}
+
+
