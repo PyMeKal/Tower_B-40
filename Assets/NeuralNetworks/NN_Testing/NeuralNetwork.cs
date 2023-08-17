@@ -218,20 +218,14 @@ public class NeuralNetwork
             Debug.LogWarning($"Model {name} is not compiled. Compute call ignored.");
             return new float[]{};
         }
-
-        try
+        
+        if (layers[0].neurons != inputVector.Length)
         {
-            if (layers[0].neurons != inputVector.Length)
-            {
-                throw new Exception(
-                    $"ERROR: Input vector size ({inputVector.Length}) does not match input layer size ({layers[0].neurons}).");
+            throw new Exception(
+                $"ERROR: Input vector size ({inputVector.Length}) does not match input layer size ({layers[0].neurons}).");
 
-            }
         }
-        catch
-        {
-            Debug.Log(layers.Count);
-        }
+
        
         
         //--------------------------------------------

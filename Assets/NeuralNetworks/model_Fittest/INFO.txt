@@ -1,2 +1,2 @@
-Fittest, 7, 
+Fittest, 6, 
 name, Layers.Count
