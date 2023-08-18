@@ -138,7 +138,7 @@ MonoBehaviour:
       layers: []
       compiled: 0
   enableEvolution: 1
-  baseSpeed: 2
+  baseSpeed: 3
   computeClock: 0.2
   targetPos: {x: 2, y: 13, z: 0}
   wallLayer:
@@ -147,9 +147,11 @@ MonoBehaviour:
   sensorRange: 10
   rayCount: 12
   residualCount: 3
-  historyCount: 20
-  historyInterval: 0.5
+  historyCount: 10
+  historyInterval: 0.6
   penalty: 0
+  bonusReward: 0
+  timeRewardMultiplier: 10
 --- !u!58 &3014666303526614513
 CircleCollider2D:
   m_ObjectHideFlags: 0

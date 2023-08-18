@@ -34,6 +34,10 @@ public class PathFinderAgent : MonoBehaviour
     private Queue<float[]> sensorHistory;
 
     public float penalty;
+    public float bonusReward;
+    public float timeRewardMultiplier;
+
+    private bool targetVisible;
     
     void Start()
     {
@@ -56,23 +60,23 @@ public class PathFinderAgent : MonoBehaviour
         {
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.1f, 0.1f, 1/128f, 1.5f, 1.5f);
+                brain.Mutate(0.1f, 0.1f, 1/80f, 1.5f, 1.5f);
         }
         else
         {
             // Construct Model
             
             // INPUT: 
-            // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), residual(rc)
+            // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), targetVisible(1), residual(rc)
             brain = new NeuralNetwork("Billy");
-            brain.AddLayer(2+2+rayCount+historyCount*(2 + rayCount)+residualCount, NeuralNetwork.ActivationFunction.Linear);
+            brain.AddLayer(2+2+rayCount+historyCount*(2 + rayCount)+1+residualCount, NeuralNetwork.ActivationFunction.Linear);
             brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             // OUTPUT:
-            // xy velocity(2), residual(rc)
-            brain.AddLayer(2 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
+            // xy velocity(2), velocity multiplier, residual(rc)
+            brain.AddLayer(3 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.Compile();
         }
 
@@ -90,6 +94,10 @@ public class PathFinderAgent : MonoBehaviour
 
         computeClockTimer -= dt;
         historyIntervalTimer -= dt;
+        
+        var position = transform.position;
+        targetVisible = Physics2D.Raycast(position, targetPos - position, 
+            Vector3.Distance(position, targetPos), wallLayer);
         
         if (computeClockTimer <= 0f)
         {
@@ -130,44 +138,44 @@ public class PathFinderAgent : MonoBehaviour
             
                 theta += 2 * Mathf.PI / rayCount;
                 inputList.Add(distances[i]);
-                // print(distances[i]);
             }
             
             // 4. Disposition history, 5. Sensor history
             if (historyIntervalTimer <= 0f)
             {
+                // print("History updated");
                 historyIntervalTimer = historyInterval;
                 
                 // 4. Disposition history
                 dispositionHistory.Enqueue(disposition);
                 dispositionHistory.Dequeue();
-                print("Disposition:" + dispositionHistory.Count);
-                foreach (var thisDisposition in dispositionHistory)
-                {
-                    inputList.Add(thisDisposition.x);
-                    inputList.Add(thisDisposition.y);
-                }
-                for(int i = 0; i < 2 * (historyCount - dispositionHistory.Count); i++)
-                    inputList.Add(0f);
-                
+                // print("Disposition:" + dispositionHistory.Count);
                 
                     // 5. Sensor history
                 sensorHistory.Enqueue(distances);
                 sensorHistory.Dequeue();
-                print("Sensor:" + sensorHistory.Count);
-                foreach (var thisSensorData in sensorHistory)
-                {
-                    print(thisSensorData.Length);
-                    foreach (float d in thisSensorData)
-                    {
-                        inputList.Add(d);
-                    }
-                }
-                for(int i = 0; i < rayCount * (historyCount - sensorHistory.Count); i++)
-                    inputList.Add(0f);
+                // print("Sensor:" + sensorHistory.Count);
+                
             }
             
-            // 6. Residual signals
+            foreach (var thisDisposition in dispositionHistory)
+            {
+                inputList.Add(thisDisposition.x);
+                inputList.Add(thisDisposition.y);
+            }
+            
+            foreach (var thisSensorData in sensorHistory)
+            {
+                foreach (float d in thisSensorData)
+                {
+                    inputList.Add(d);
+                }
+            }
+            
+            // 6. Target visible
+            inputList.Add(targetVisible ? 1f : 0f);
+            
+            // 7. Residual signals
             foreach (var res in residual)
             {
                 inputList.Add(res);
@@ -178,10 +186,10 @@ public class PathFinderAgent : MonoBehaviour
 
         float[] output = brain.Compute(CalculateInputVector());
         
-        rb.velocity = new Vector2(output[0] - 0.5f,output[1] - 0.5f) * (2 * baseSpeed);
+        rb.velocity = new Vector2(output[0] - 0.5f,output[1] - 0.5f) * (2 * baseSpeed * output[2]);
         for (int i = 0; i < residualCount; i++)
         {
-            residual[i] = output[i + 2];
+            residual[i] = output[i + 3];
         }
     }
 
@@ -189,20 +197,34 @@ public class PathFinderAgent : MonoBehaviour
     {
         float reward;
         var position = transform.position;
-        reward = -(targetPos - position).sqrMagnitude;
-        RaycastHit2D targetVisible = Physics2D.Raycast(position, targetPos - position, 
-            Vector3.Distance(position, targetPos), wallLayer);
-        reward *= targetVisible.collider == null ? 2f : 1f;
+        float sqrDist = (targetPos - position).sqrMagnitude;
+        reward = -sqrDist;
+        reward *= targetVisible ? 2f : 1f;
 
-        return reward - penalty;
+        if (bonusReward <= 0f && sqrDist <= 0.1f)
+            bonusReward = motherNature.genocideClockTimer * timeRewardMultiplier;
+        
+        return reward + bonusReward - penalty;
     }
 
-    private void OnCollisionEnter(Collision other)
+    bool IsLayerInMask(GameObject obj, LayerMask mask) 
     {
-        if (other.gameObject.layer == wallLayer)
+        return (mask.value & (1 << obj.layer)) > 0;
+    }
+    
+    private void OnCollisionEnter2D(Collision2D other)
+    {
+        if (IsLayerInMask(other.gameObject, wallLayer))
         {
-            print("Hit wall");
             penalty += 2f;
+        }
+    }
+    
+    private void OnCollisionStay2D(Collision2D other)
+    {
+        if (IsLayerInMask(other.gameObject, wallLayer))
+        {
+            penalty += 1f*Time.deltaTime;
         }
     }
 }

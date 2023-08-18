@@ -72,7 +72,7 @@ public class NeuralNetwork
             };
         }
         
-        /*
+        /* Alternate Constructor. Unused.
         public Dense(int neurons, string activationFunction)
         {
             this.neurons = neurons;
@@ -115,7 +115,8 @@ public class NeuralNetwork
                 float y = actFuncDel(sum + biases[n]);
                 if (float.IsNaN(y))
                 {
-                    Debug.LogWarning($"NaN occured (y) in Dense calculation: sum: {sum}, act-func: {activationFunction.ToString()}\n" +
+                    Debug.LogWarning($"NaN occured (y) in Dense calculation (Potential overflow):" +
+                                     $" sum: {sum}, act-func: {activationFunction.ToString()}\n" +
                                      $"inputVector: {String.Join(", ", inputVector.Select(f => f.ToString()))}");
                 }
                 outputVector[n] = y;
