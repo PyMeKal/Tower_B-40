@@ -10,6 +10,9 @@ public class AgentInterface : MonoBehaviour
     public bool modelReceived;
     public NeuralNetwork receivedModel;
     public bool mutate;
+    public float mutationScale;
+    public float reshuffleChanceScale;
+    
     public string directLoadModel;
 
     private void Awake()

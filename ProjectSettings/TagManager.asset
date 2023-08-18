@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Other Camera
   - GM
+  - Target
   layers:
   - Default
   - TransparentFX

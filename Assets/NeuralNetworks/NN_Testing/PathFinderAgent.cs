@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using NeuralNetworks.NN_Testing;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
@@ -60,7 +61,8 @@ public class PathFinderAgent : MonoBehaviour
         {
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.1f, 0.1f, 1/80f, 1.5f, 1.5f);
+                brain.Mutate(0.1f * agentInterface.mutationScale, 0.1f * agentInterface.mutationScale,
+                    1/80f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f);
         }
         else
         {
@@ -70,8 +72,8 @@ public class PathFinderAgent : MonoBehaviour
             // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), targetVisible(1), residual(rc)
             brain = new NeuralNetwork("Billy");
             brain.AddLayer(2+2+rayCount+historyCount*(2 + rayCount)+1+residualCount, NeuralNetwork.ActivationFunction.Linear);
+            brain.AddLayer(128, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             // OUTPUT:
@@ -85,7 +87,8 @@ public class PathFinderAgent : MonoBehaviour
         motherNature = GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>();
         if(enableEvolution)
             motherNature.agents.Add(agent);
-        
+
+        targetPos = GameObject.FindGameObjectWithTag("Target").transform.position;
     }
     
     void FixedUpdate()
@@ -199,7 +202,7 @@ public class PathFinderAgent : MonoBehaviour
         var position = transform.position;
         float sqrDist = (targetPos - position).sqrMagnitude;
         reward = -sqrDist;
-        reward *= targetVisible ? 2f : 1f;
+        reward += targetVisible ? Mathf.Clamp(10f - sqrDist, 0f, 10f) : 0f;
 
         if (bonusReward <= 0f && sqrDist <= 0.1f)
             bonusReward = motherNature.genocideClockTimer * timeRewardMultiplier;
