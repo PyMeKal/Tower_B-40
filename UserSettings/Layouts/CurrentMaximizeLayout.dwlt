@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 2979
+  controlID: 5411
 --- !u!114 &2
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -92,7 +92,7 @@ MonoBehaviour:
     m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 1
+    m_EnableMouseInput: 0
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -147,7 +147,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 2980
+  controlID: 5355
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 2981
+  controlID: 5356
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -236,9 +236,9 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 446f0000
-      m_LastClickedID: 28484
+      scrollPos: {x: 0, y: 358}
+      m_SelectedIDs: e475f9ff
+      m_LastClickedID: -428572
       m_ExpandedIDs: bafaffff566f0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
@@ -721,9 +721,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: -8.648578, y: 10.938138, z: -0.011988673}
+    m_Target: {x: -1.2101866, y: 9.911628, z: -0.05573074}
     speed: 2
-    m_Value: {x: -8.648578, y: 10.938138, z: -0.011988673}
+    m_Value: {x: -1.2101866, y: 9.911628, z: -0.05573074}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -773,9 +773,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 17.392675
+    m_Target: 16.502577
     speed: 2
-    m_Value: 17.392675
+    m_Value: 16.502577
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1454,8 +1454,8 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 446f0000
-    m_LastClickedInstanceID: 28484
+    m_SelectedInstanceIDs: e475f9ff
+    m_LastClickedInstanceID: -428572
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c6230000ae7c0000c28b00005e870000e28500006c6f0000ca7b0000ee8d00003a6a0000f26e0000f06e0000aa6f0000
     m_RenameOverlay:
@@ -1590,7 +1590,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 0
+  m_LastVerticalScrollValue: 486
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

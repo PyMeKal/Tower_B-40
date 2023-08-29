@@ -18,6 +18,7 @@ public class PathFinderAgent : MonoBehaviour
     private float computeClockTimer;
 
     public Vector3 targetPos;
+    public Transform targetTransform;
     private Rigidbody2D rb;
     private MotherNature motherNature;
 
@@ -61,8 +62,8 @@ public class PathFinderAgent : MonoBehaviour
         {
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.1f * agentInterface.mutationScale, 0.1f * agentInterface.mutationScale,
-                    1/80f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f);
+                brain.Mutate(0.05f * agentInterface.mutationScale, 0.05f * agentInterface.mutationScale,
+                    1/128f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f);
         }
         else
         {
@@ -89,7 +90,8 @@ public class PathFinderAgent : MonoBehaviour
         if(enableEvolution)
             motherNature.agents.Add(agent);
 
-        targetPos = GameObject.FindGameObjectWithTag("Target").transform.position;
+        targetTransform = GameObject.FindGameObjectWithTag("Target").transform;
+        targetPos = targetTransform.position;
     }
     
     void FixedUpdate()
@@ -197,6 +199,7 @@ public class PathFinderAgent : MonoBehaviour
         }
     }
 
+    private bool targetReachedFlag;
     float FitnessFunction()
     {
         float reward;
@@ -205,11 +208,20 @@ public class PathFinderAgent : MonoBehaviour
         reward = -sqrDist;
         reward *= targetVisible ? 0.5f : 1f;
 
-        if (bonusReward <= 0f && sqrDist <= 0.2f)
+        if (!targetReachedFlag && sqrDist <= 1f)
         {
-            bonusReward = motherNature.genocideClockTimer * timeRewardMultiplier;
-            baseSpeed = 0f;
+            // bonusReward += motherNature.genocideClockTimer * timeRewardMultiplier;
+            bonusReward += 50f;
+            targetReachedFlag = true;
         }
+
+        if (targetPos != targetTransform.position)
+        {
+            targetReachedFlag = false;
+            targetPos = targetTransform.position;
+            bonusReward += reward;
+        }
+        
         
         return reward + bonusReward - penalty;
     }

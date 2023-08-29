@@ -143,11 +143,12 @@ MonoBehaviour:
   baseSpeed: 3
   computeClock: 0.2
   targetPos: {x: 2, y: 13, z: 0}
+  targetTransform: {fileID: 0}
   wallLayer:
     serializedVersion: 2
     m_Bits: 128
   sensorRange: 10
-  rayCount: 8
+  rayCount: 12
   residualCount: 2
   historyCount: 2
   historyInterval: 1
