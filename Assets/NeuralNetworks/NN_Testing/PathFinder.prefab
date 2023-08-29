@@ -113,6 +113,8 @@ MonoBehaviour:
     layers: []
     compiled: 0
   mutate: 0
+  mutationScale: 0
+  reshuffleChanceScale: 0
   directLoadModel: 
 --- !u!114 &4731637732224737323
 MonoBehaviour:
@@ -145,10 +147,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   sensorRange: 10
-  rayCount: 12
-  residualCount: 3
-  historyCount: 10
-  historyInterval: 0.6
+  rayCount: 8
+  residualCount: 2
+  historyCount: 2
+  historyInterval: 1
   penalty: 0
   bonusReward: 0
   timeRewardMultiplier: 10

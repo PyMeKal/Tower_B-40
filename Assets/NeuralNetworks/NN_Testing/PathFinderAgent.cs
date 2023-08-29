@@ -72,13 +72,14 @@ public class PathFinderAgent : MonoBehaviour
             // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), targetVisible(1), residual(rc)
             brain = new NeuralNetwork("Billy");
             brain.AddLayer(2+2+rayCount+historyCount*(2 + rayCount)+1+residualCount, NeuralNetwork.ActivationFunction.Linear);
-            brain.AddLayer(128, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             // OUTPUT:
-            // xy velocity(2), velocity multiplier, residual(rc)
-            brain.AddLayer(3 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
+            // xy velocity(2), residual(rc)
+            brain.AddLayer(2 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.Compile();
         }
 
@@ -99,7 +100,7 @@ public class PathFinderAgent : MonoBehaviour
         historyIntervalTimer -= dt;
         
         var position = transform.position;
-        targetVisible = Physics2D.Raycast(position, targetPos - position, 
+        targetVisible = !Physics2D.Raycast(position, targetPos - position, 
             Vector3.Distance(position, targetPos), wallLayer);
         
         if (computeClockTimer <= 0f)
@@ -189,10 +190,10 @@ public class PathFinderAgent : MonoBehaviour
 
         float[] output = brain.Compute(CalculateInputVector());
         
-        rb.velocity = new Vector2(output[0] - 0.5f,output[1] - 0.5f) * (2 * baseSpeed * output[2]);
+        rb.velocity = new Vector2(output[0] - 0.5f,output[1] - 0.5f) * (2 * baseSpeed);
         for (int i = 0; i < residualCount; i++)
         {
-            residual[i] = output[i + 3];
+            residual[i] = output[i + 2];
         }
     }
 
@@ -202,10 +203,13 @@ public class PathFinderAgent : MonoBehaviour
         var position = transform.position;
         float sqrDist = (targetPos - position).sqrMagnitude;
         reward = -sqrDist;
-        reward += targetVisible ? Mathf.Clamp(10f - sqrDist, 0f, 10f) : 0f;
+        reward *= targetVisible ? 0.5f : 1f;
 
-        if (bonusReward <= 0f && sqrDist <= 0.1f)
+        if (bonusReward <= 0f && sqrDist <= 0.2f)
+        {
             bonusReward = motherNature.genocideClockTimer * timeRewardMultiplier;
+            baseSpeed = 0f;
+        }
         
         return reward + bonusReward - penalty;
     }

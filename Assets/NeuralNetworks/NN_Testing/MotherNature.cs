@@ -81,6 +81,7 @@ namespace NeuralNetworks.NN_Testing
                 agentInterface.receivedModel = deepCopy;
                 agentInterface.modelReceived = true;
                 agentInterface.mutate = false;
+                offspring.GetComponent<SpriteRenderer>().color = Color.green;
             }
         
             // Going for an improved selection/reproduction method, where the chance of reproducing is proportional to
