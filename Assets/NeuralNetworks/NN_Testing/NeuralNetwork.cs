@@ -143,6 +143,7 @@ public class NeuralNetwork
     public string name;
     public List<Dense> layers = new List<Dense>();
     public bool compiled = false;
+    // private Dictionary<string, int> inputLabels, outputLabels;
     
     public static readonly string DefaultDirectory = Application.dataPath + "/NeuralNetworks";
     
@@ -280,6 +281,36 @@ public class NeuralNetwork
         Compile(false);
     }
 
+    /*
+    public Dictionary<string, int> GetInputLabels()
+    {
+        return inputLabels;
+    }
+    public void SetInputLabels(string[] labels)
+    {
+        inputLabels = new Dictionary<string, int>();
+        for (int index = 0; index < labels.Length; index++)
+        {
+            string label = labels[index];
+            inputLabels.Add(label, index);
+        }
+    }
+    public Dictionary<string, int> GetOutputLabels()
+    {
+        return outputLabels;
+    }
+    public void SetOutputLabels(string[] labels)
+    {
+        outputLabels = new Dictionary<string, int>();
+        for (int index = 0; index < labels.Length; index++)
+        {
+            string label = labels[index];
+            outputLabels.Add(label, index);
+        }
+    }
+    */
+    
+    
     public NeuralNetwork DeepCopy(string newName)
     {
         NeuralNetwork newModel = new NeuralNetwork(newName);
