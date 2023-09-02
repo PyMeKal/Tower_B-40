@@ -7,8 +7,7 @@ using System;
 using System.Runtime.Serialization.Json;
 using Unity.Burst;
 using UnityEditor.Experimental.GraphView;
-using Random = UnityEngine.Random;  // Praise jetbrains
-
+using Random = UnityEngine.Random; // Praise jetbrains
 using System.IO;
 
 
@@ -24,17 +23,19 @@ public class NeuralNetwork
         Tanh,
         Linear,
     }
-    
+
     // Feat. GPT4. Clamped to prevent overflow
     public static Func<float, float> relu = x => Mathf.Max(0f, x);
     public static Func<float, float> sigmoid = x => 1f / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
     public static Func<float, float> swish = x => x / (1f + Mathf.Exp(-Mathf.Clamp(x, -10f, 10f)));
-    public static Func<float, float> tanh = x => {
+
+    public static Func<float, float> tanh = x =>
+    {
         if (x > 10) return 1f;
         if (x < -10) return -1f;
         return (Mathf.Exp(2 * x) - 1f) / (Mathf.Exp(2 * x) + 1f);
     };
-    
+
     [System.Serializable]
     public class Dense
     {
@@ -45,8 +46,8 @@ public class NeuralNetwork
         public float[] biases;
 
         public Func<float, float> actFuncDel;
-        
-        public Dense(int neurons, ActivationFunction activationFunction, int prevNeurons=0)
+
+        public Dense(int neurons, ActivationFunction activationFunction, int prevNeurons = 0)
         {
             this.neurons = neurons;
             this.activationFunction = activationFunction;
@@ -55,8 +56,8 @@ public class NeuralNetwork
             if (prevNeurons > 0)
                 weightsFlat = new float[neurons * prevNeurons];
             else
-                weightsFlat = new float[]{};
-            
+                weightsFlat = new float[] { };
+
             SetActFuncDel();
         }
 
@@ -68,10 +69,10 @@ public class NeuralNetwork
                 ActivationFunction.Sigmoid => sigmoid,
                 ActivationFunction.Swish => swish,
                 ActivationFunction.Tanh => tanh,
-                _ => x => x,  // Default
+                _ => x => x, // Default
             };
         }
-        
+
         /* Alternate Constructor. Unused.
         public Dense(int neurons, string activationFunction)
         {
@@ -111,7 +112,7 @@ public class NeuralNetwork
             {
                 // Apparently this is a LINQ expression. Looks slick.
                 float sum = inputVector.Select((t, c) => t * weights[n, c]).Sum();
-                
+
                 float y = actFuncDel(sum + biases[n]);
                 if (float.IsNaN(y))
                 {
@@ -119,8 +120,10 @@ public class NeuralNetwork
                                      $" sum: {sum}, act-func: {activationFunction.ToString()}\n" +
                                      $"inputVector: {String.Join(", ", inputVector.Select(f => f.ToString()))}");
                 }
+
                 outputVector[n] = y;
             }
+
             return outputVector;
         }
 
@@ -139,14 +142,14 @@ public class NeuralNetwork
             }
         }
     }
-    
+
     public string name;
     public List<Dense> layers = new List<Dense>();
     public bool compiled = false;
     // private Dictionary<string, int> inputLabels, outputLabels;
-    
+
     public static readonly string DefaultDirectory = Application.dataPath + "/NeuralNetworks";
-    
+
     public NeuralNetwork(string name)
     {
         this.name = name;
@@ -159,37 +162,55 @@ public class NeuralNetwork
             Debug.LogWarning($"Model {name} is compiled. Cannot add layers.");
             return;
         }
+
         //--------------------------------------------
         layers.Add(layers.Count == 0
             ? new Dense(neurons, actFunction)
             : new Dense(neurons, actFunction, layers.Last().neurons));
     }
 
-    public void Compile(bool initializeWnB=true, float scale=1f)
+    public void Compile(bool initializeWnB = true, float scale = 1f, float weightDropoutRate = 0.75f,
+        float neuronDropoutRate = 0.5f)
     {
-        
         compiled = true;
 
         if (!initializeWnB)
-            return;  // Skip initialization
-        
-        
+            return; // Skip initialization
+
+
         // Initializing weights & biases for all layers except input
         for (int i = 1; i < layers.Count; i++)
         {
             Dense thisLayer = layers[i];
             thisLayer.weights = new float[thisLayer.neurons, layers[i - 1].neurons];
-            
-            for (int n = 0; n < thisLayer.neurons; n++)  // n for neuron
+
+            for (int n = 0; n < thisLayer.neurons; n++) // n for neuron
             {
-                for (int c = 0; c < layers[i - 1].neurons; c++)  // c for connection
+                if (Random.Range(0f, 1f) < neuronDropoutRate)
                 {
-                    // Random within interval: [-1, 1]
-                    thisLayer.weights[n, c] = Random.Range(-scale, scale);
+                    // Completely disables neuron
+                    thisLayer.biases[n] = 0f;
+                    for (int c = 0; c < layers[i - 1].neurons; c++) // c for connection
+                    {
+                        // Zeroed
+                        thisLayer.weights[n, c] = 0f;
+                    }
                 }
-                thisLayer.biases[n] = Random.Range(-scale, scale);
+                else
+                {
+                    // Initialize neuron with W&B
+                    thisLayer.biases[n] = Random.Range(-scale, scale);
+                    for (int c = 0; c < layers[i - 1].neurons; c++) // c for connection
+                    {
+                        if (Random.Range(0f, 1f) < weightDropoutRate)
+                            thisLayer.weights[n, c] = 0f;  // Zeroed
+                        else  
+                            thisLayer.weights[n, c] = Random.Range(-scale, scale);  // Random within interval: [-1, 1]
+                    }
+                }
             }
         }
+
         // First layer is the input layer. Don't do relu on it.
         for (int n = 0; n < layers[0].neurons; n++)
             layers[0].biases[n] = Random.Range(-scale, scale);
@@ -218,20 +239,18 @@ public class NeuralNetwork
         if (!compiled)
         {
             Debug.LogWarning($"Model {name} is not compiled. Compute call ignored.");
-            return new float[]{};
+            return new float[] { };
         }
-        
+
         if (layers[0].neurons != inputVector.Length)
         {
             throw new Exception(
                 $"ERROR: Input vector size ({inputVector.Length}) does not match input layer size ({layers[0].neurons}).");
-
         }
 
-       
-        
+
         //--------------------------------------------
-        
+
         float[] logit = inputVector;
         foreach (Dense layer in layers)
         {
@@ -244,8 +263,9 @@ public class NeuralNetwork
         return logit;
     }
 
-    public void Mutate(float rangeWeights, float rangeBiases, float reshuffleChance=0.05f, 
-        float reshuffleScaleWeight=1.5f, float reshuffleScaleBias=1f)
+    public void Mutate(float rangeWeights, float rangeBiases, float mutationChance = 0.2f,
+        float reshuffleChance = 0.05f,
+        float reshuffleScaleWeight = 1.5f, float reshuffleScaleBias = 1f)
     {
         for (int i = 0; i < layers.Count; i++)
         {
@@ -257,9 +277,11 @@ public class NeuralNetwork
                     layers[i].biases[n] = Random.Range(-reshuffleScaleBias, reshuffleScaleBias);
                     continue;
                 }
-                layers[i].biases[n] += Random.Range(-rangeBiases, rangeBiases);
+
+                if (Random.Range(0f, 1f) <= mutationChance)
+                    layers[i].biases[n] += Random.Range(-rangeBiases, rangeBiases);
             }
-            
+
             // Weights
             if (i > 0)
             {
@@ -272,12 +294,14 @@ public class NeuralNetwork
                             layers[i].weights[n, c] = Random.Range(-reshuffleScaleWeight, reshuffleScaleWeight);
                             continue;
                         }
-                        layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
+
+                        if (Random.Range(0f, 1f) <= mutationChance)
+                            layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
                     }
                 }
             }
-            
         }
+
         Compile(false);
     }
 
@@ -309,8 +333,8 @@ public class NeuralNetwork
         }
     }
     */
-    
-    
+
+
     public NeuralNetwork DeepCopy(string newName)
     {
         NeuralNetwork newModel = new NeuralNetwork(newName);
@@ -318,7 +342,7 @@ public class NeuralNetwork
         foreach (var layer in layers)
         {
             Dense newLayer = new Dense(layer.neurons, layer.activationFunction);
-            
+
             // Making sure arrays are not aliased. Feat. GPT4
             if (layer != layers[0])
             {
@@ -329,7 +353,7 @@ public class NeuralNetwork
             }
 
             newLayer.biases = (float[])layer.biases.Clone();
-            
+
             newLayers.Add(newLayer);
         }
 
@@ -339,15 +363,14 @@ public class NeuralNetwork
         return newModel;
     }
 
-    
-    
-    public string SaveModel(string directory="DEFAULT")
+
+    public string SaveModel(string directory = "DEFAULT")
     {
         PackFlatWeights();
 
         if (directory is "" or "DEFAULT" or "default")
             directory = DefaultDirectory;
-        
+
         // Saves model as json
         string dir = directory + "/model_" + name + "/";
         Directory.CreateDirectory(dir);
@@ -357,10 +380,11 @@ public class NeuralNetwork
             string thisDirectory = dir + $"layer_{i}.json";
             File.WriteAllText(thisDirectory, serialized);
         }
+
         File.WriteAllText(dir + "INFO.txt", $"{name}, {layers.Count}, \nname, Layers.Count");
         return dir;
     }
-    
+
     public static NeuralNetwork LoadModel(string fullDirectory)
     {
         string[] info = File.ReadAllText(fullDirectory + "INFO.txt").Split(", ");
@@ -375,8 +399,8 @@ public class NeuralNetwork
             thisLayer.SetActFuncDel();
             loaded.layers.Add(thisLayer);
         }
+
         loaded.Compile(false);
         return loaded;
     }
-    
 }

@@ -40,6 +40,9 @@ public class PathFinderAgent : MonoBehaviour
     public float timeRewardMultiplier;
 
     private bool targetVisible;
+
+    public float[] inputVector;
+    public float[] outputVector;
     
     void Start()
     {
@@ -73,9 +76,10 @@ public class PathFinderAgent : MonoBehaviour
             // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), targetVisible(1), residual(rc)
             brain = new NeuralNetwork("Billy");
             brain.AddLayer(2+2+rayCount+historyCount*(2 + rayCount)+1+residualCount, NeuralNetwork.ActivationFunction.Linear);
+            brain.AddLayer(128, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(64, NeuralNetwork.ActivationFunction.ReLU);
-            brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.ReLU);
             brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
             // OUTPUT:
@@ -83,6 +87,9 @@ public class PathFinderAgent : MonoBehaviour
             brain.AddLayer(2 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.Compile();
         }
+
+        inputVector = new float[2 + 2 + rayCount + historyCount * (2 + rayCount) + 1 + residualCount];
+        outputVector = new float[2 + residualCount];
 
         agent = new Agent(gameObject, 0f, brain);
         
@@ -121,7 +128,7 @@ public class PathFinderAgent : MonoBehaviour
             List<float> inputList = new List<float>();
             // 1. Disposition
             var position = transform.position;
-            Vector3 disposition = (initialPos - position);
+            Vector3 disposition = (position - initialPos);
             inputList.Add(disposition.x);
             inputList.Add(disposition.y);
             
@@ -190,12 +197,13 @@ public class PathFinderAgent : MonoBehaviour
             return inputList.ToArray();
         }
 
-        float[] output = brain.Compute(CalculateInputVector());
+        inputVector = CalculateInputVector();
+        outputVector = brain.Compute(inputVector);
         
-        rb.velocity = new Vector2(output[0] - 0.5f,output[1] - 0.5f) * (2 * baseSpeed);
+        rb.velocity = new Vector2(outputVector[0] - 0.5f,outputVector[1] - 0.5f) * (2 * baseSpeed);
         for (int i = 0; i < residualCount; i++)
         {
-            residual[i] = output[i + 2];
+            residual[i] = outputVector[i + 2];
         }
     }
 

@@ -15,6 +15,7 @@ namespace NeuralNetworks.NN_Testing
         [HideInInspector] public float genocideClockTimer;
         public int poolDivider;  // Formerly offspringCount
         public int preserveCount;
+        public float selectionFactor = 1f;
         public bool saveBestModel;
     
         public Vector2 spawnArea;  // Center origin
@@ -88,7 +89,7 @@ namespace NeuralNetworks.NN_Testing
             // the agent's reward. Stolen from here: https://youtu.be/q_PtNIEDVnE (Pezzza's Work)
             List<float> rewards = survivors.Select(a => a.reward).ToList();
             if (rewards.Min() < 0f)
-                rewards = rewards.Select(r => r - rewards.Min()).ToList();
+                rewards = rewards.Select(r => Mathf.Pow(r - rewards.Min(), selectionFactor)).ToList();
             
             // Adaptive Mutation Rates: Variable mutation scale & reshuffle chance based on reward
             // -> less reward, more mutation
