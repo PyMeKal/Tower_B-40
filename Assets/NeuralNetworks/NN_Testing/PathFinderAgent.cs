@@ -65,8 +65,8 @@ public class PathFinderAgent : MonoBehaviour
         {
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.05f * agentInterface.mutationScale, 0.05f * agentInterface.mutationScale,
-                    1/128f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f);
+                brain.Mutate(0.05f * agentInterface.mutationScale, 0.05f * agentInterface.mutationScale, 0.2f,
+                    1/128f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f, dropoutRate:0.1f);
         }
         else
         {
@@ -85,7 +85,7 @@ public class PathFinderAgent : MonoBehaviour
             // OUTPUT:
             // xy velocity(2), residual(rc)
             brain.AddLayer(2 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
-            brain.Compile();
+            brain.Compile(neuronDropoutRate:0.1f, weightDropoutRate:0.1f);
         }
 
         inputVector = new float[2 + 2 + rayCount + historyCount * (2 + rayCount) + 1 + residualCount];

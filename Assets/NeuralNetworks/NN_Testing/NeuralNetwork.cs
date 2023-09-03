@@ -44,6 +44,7 @@ public class NeuralNetwork
         public float[,] weights;
         public float[] weightsFlat;
         public float[] biases;
+        public bool[] activeNeurons;
 
         public Func<float, float> actFuncDel;
 
@@ -52,6 +53,7 @@ public class NeuralNetwork
             this.neurons = neurons;
             this.activationFunction = activationFunction;
             biases = new float[neurons];
+            activeNeurons = new bool[neurons];
 
             if (prevNeurons > 0)
                 weightsFlat = new float[neurons * prevNeurons];
@@ -186,9 +188,10 @@ public class NeuralNetwork
 
             for (int n = 0; n < thisLayer.neurons; n++) // n for neuron
             {
-                if (Random.Range(0f, 1f) < neuronDropoutRate)
+                if (Random.value < neuronDropoutRate && n < thisLayer.neurons - 1)
                 {
                     // Completely disables neuron
+                    thisLayer.activeNeurons[n] = false;
                     thisLayer.biases[n] = 0f;
                     for (int c = 0; c < layers[i - 1].neurons; c++) // c for connection
                     {
@@ -199,10 +202,11 @@ public class NeuralNetwork
                 else
                 {
                     // Initialize neuron with W&B
+                    thisLayer.activeNeurons[n] = true;
                     thisLayer.biases[n] = Random.Range(-scale, scale);
                     for (int c = 0; c < layers[i - 1].neurons; c++) // c for connection
                     {
-                        if (Random.Range(0f, 1f) < weightDropoutRate)
+                        if (Random.value < weightDropoutRate)
                             thisLayer.weights[n, c] = 0f;  // Zeroed
                         else  
                             thisLayer.weights[n, c] = Random.Range(-scale, scale);  // Random within interval: [-1, 1]
@@ -264,21 +268,37 @@ public class NeuralNetwork
     }
 
     public void Mutate(float rangeWeights, float rangeBiases, float mutationChance = 0.2f,
-        float reshuffleChance = 0.05f,
-        float reshuffleScaleWeight = 1.5f, float reshuffleScaleBias = 1f)
+        float reshuffleChance = 0.02f,
+        float reshuffleScaleWeight = 1.5f, float reshuffleScaleBias = 1f, float dropoutRate = 0.5f)
     {
         for (int i = 0; i < layers.Count; i++)
         {
-            // Biases
-            for (int n = 0; n < layers[i].biases.Length; n++)
+            // Biases & Neuron
+            for (int n = 0; n < layers[i].neurons; n++)
             {
-                if (Random.Range(0f, 1f) <= reshuffleChance)
+                if (Random.value <= reshuffleChance)
                 {
-                    layers[i].biases[n] = Random.Range(-reshuffleScaleBias, reshuffleScaleBias);
-                    continue;
+                    if (Random.value > dropoutRate)
+                    {
+                        layers[i].activeNeurons[n] = true;
+                        layers[i].biases[n] = Random.Range(-reshuffleScaleBias, reshuffleScaleBias);
+                        continue;
+                    }
+                    if (n < layers[i].neurons - 1)
+                    {
+                        layers[i].activeNeurons[n] = false;
+                        layers[i].biases[n] = 0f;
+                        if(i==0) continue;
+                        for (int c = 0; c < layers[i - 1].neurons; c++) // c for connection
+                        {
+                            // Zeroed
+                            layers[i].weights[n, c] = 0f;
+                        }
+                        continue;
+                    }
                 }
 
-                if (Random.Range(0f, 1f) <= mutationChance)
+                if (Random.value <= mutationChance && layers[i].activeNeurons[n])
                     layers[i].biases[n] += Random.Range(-rangeBiases, rangeBiases);
             }
 
@@ -287,15 +307,20 @@ public class NeuralNetwork
             {
                 for (int n = 0; n < layers[i].neurons; n++)
                 {
+                    if(!layers[i].activeNeurons[n])
+                        continue;
                     for (int c = 0; c < layers[i - 1].neurons; c++)
                     {
-                        if (Random.Range(0f, 1f) <= reshuffleChance)
+                        if (Random.value <= reshuffleChance)
                         {
-                            layers[i].weights[n, c] = Random.Range(-reshuffleScaleWeight, reshuffleScaleWeight);
+                            if (Random.value > dropoutRate)
+                                layers[i].weights[n, c] = Random.Range(-reshuffleScaleWeight, reshuffleScaleWeight);
+                            else
+                                layers[i].weights[n, c] = 0f;
                             continue;
                         }
 
-                        if (Random.Range(0f, 1f) <= mutationChance)
+                        if (Random.value <= mutationChance)
                             layers[i].weights[n, c] += Random.Range(-rangeWeights, rangeWeights);
                     }
                 }

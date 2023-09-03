@@ -16,7 +16,7 @@ public class PFTarget : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += ResetRandomPosition;
+        // GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += ResetRandomPosition;
         GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += IncreaseBox;
         ResetRandomPosition();
         positionResetClockTimer = positionResetClock;
@@ -29,6 +29,11 @@ public class PFTarget : MonoBehaviour
 
         tl = new Vector2(Mathf.Max(tl.x, -10f), Mathf.Min(tl.y, 22f));
         br = new Vector2(Mathf.Min(br.x, 10f), Mathf.Max(br.y, 5));
+
+        tl.x = Mathf.Round(tl.x * 100f) / 100f;
+        tl.y = Mathf.Round(tl.y * 100f) / 100f;
+        br.x = Mathf.Round(br.x * 100f) / 100f;
+        br.y = Mathf.Round(br.y * 100f) / 100f;
     }
 
     Vector2 GetRandomPosition()
