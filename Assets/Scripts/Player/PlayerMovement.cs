@@ -9,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     private float walkAccelPow;
     public float jumpSpeed;
     public LayerMask groundLayers;
-    [SerializeField] private Transform feetPosision;
+    [SerializeField] private Transform feetPosition;
 
     public Transform spritesTransform;
     private Rigidbody2D rb;
@@ -18,8 +18,9 @@ public class PlayerMovement : MonoBehaviour
     private delegate void DELVoid();
     private DELVoid flipSprite, move, jump;
 
-    [Header("Dash settings")]
-    [SerializeField] private float dashDistance, dashYSnap, upDashSpeed;
+    [Header("Dash settings")] 
+    [SerializeField] private float dashDistance;
+    [SerializeField] private float dashYSnap, upDashSpeed;
     void Start()
     {
         //Scripts
@@ -65,24 +66,24 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 moveVector;
 
-        float vx = 0f;
+        float vx;
         if (Input.GetAxisRaw("Horizontal") != 0f)
             direction = Input.GetAxisRaw("Horizontal");
         //print(direction);
         if (walkAccelPow == moveAccel)
         {
-            vx = Mathf.Clamp(walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) + direction * v0, -walkSpeed, walkSpeed);
+            vx = Mathf.Clamp(direction * walkSpeed * Mathf.Pow(Mathf.Abs(Input.GetAxis("Horizontal")), walkAccelPow) + direction * v0, -walkSpeed, walkSpeed);
             moveVector = new Vector3(vx, rb.velocity.y);
         }
         else
         {
-            vx = walkSpeed * Mathf.Pow(Input.GetAxis("Horizontal"), walkAccelPow) * direction;
+            vx = walkSpeed * Mathf.Pow(Mathf.Abs(Input.GetAxis("Horizontal")), walkAccelPow) * direction;
             moveVector = new Vector3(vx, rb.velocity.y);
         }
 
         rb.velocity = moveVector;
-        playerAnimation.RequestAnimation<bool>("Walk", Input.GetAxisRaw("Horizontal") != 0 ? true : false);
-        playerAnimation.RequestAnimation<bool>("Walk_play_Decel", Mathf.Abs(vx) >= walkSpeed * 0.8f ? true : false);
+        RequestAnimation<bool>("Walk", Input.GetAxisRaw("Horizontal") != 0 ? true : false);
+        RequestAnimation<bool>("Walk_play_Decel", Mathf.Abs(vx) >= walkSpeed * 0.8f ? true : false);
         prevInput = GetInputVector();
 
         Vector3 GetInputVector()
@@ -93,14 +94,14 @@ public class PlayerMovement : MonoBehaviour
 
     void Jump()
     {
-        bool onGround = !(Physics2D.OverlapCircle(feetPosision.position, 0.2f, groundLayers) == null);
-        playerAnimation.RequestAnimation<bool>("On_Ground", onGround);
+        bool onGround = !(Physics2D.OverlapCircle(feetPosition.position, 0.2f, groundLayers) == null);
+        RequestAnimation<bool>("On_Ground", onGround);
 
         if (Input.GetKeyDown(KeyCode.W) && onGround)
         {
             //print("Jump");
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
-            playerAnimation.RequestAnimation<string>("Jump", string.Empty);
+            RequestAnimation<string>("Jump", string.Empty);
         }
 
     }
@@ -161,5 +162,12 @@ public class PlayerMovement : MonoBehaviour
         {
 
         }
+    }
+
+    private void RequestAnimation<T>(string param, T value)
+    {
+        if (playerAnimation == null)
+            return;
+        playerAnimation.RequestAnimation(param, value);
     }
 }

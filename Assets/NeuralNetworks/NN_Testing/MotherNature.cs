@@ -95,7 +95,7 @@ namespace NeuralNetworks.NN_Testing
             // -> less reward, more mutation
             float[] mutationScales = new float[survivorCount];
             float[] reshuffleChanceScales = new float[survivorCount];
-            float minMS = 1.0f, maxMS = 1.5f, minRCS = 0.5f, maxRCS = 1.5f;  // min is exclusive
+            float minMS = 1.0f, maxMS = 1.5f, minRCS = 1f, maxRCS = 1.5f;  // min is exclusive
             for (int i = 0; i < survivorCount; i++)
             {
                 mutationScales[i] = minMS + (maxMS - minMS) * ((i + 1) / (float)survivorCount);

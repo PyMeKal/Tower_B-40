@@ -13,19 +13,21 @@ public class PFTarget : MonoBehaviour
     public float positionResetClock;
 
     private float positionResetClockTimer;
+
+    public float boxIncreaseIncrement = 0.05f;
     // Start is called before the first frame update
     void Start()
     {
-        // GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += ResetRandomPosition;
-        GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += IncreaseBox;
+        GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += ResetRandomPosition;
+        // GameObject.FindGameObjectWithTag("GM").GetComponent<MotherNature>().purge += IncreaseBox;
         ResetRandomPosition();
         positionResetClockTimer = positionResetClock;
     }
 
     void IncreaseBox()
     {
-        tl += new Vector2(-0.05f, 0.05f);
-        br += new Vector2(0.05f, -0.05f);
+        tl += new Vector2(-boxIncreaseIncrement, boxIncreaseIncrement);
+        br += new Vector2(boxIncreaseIncrement, -boxIncreaseIncrement);
 
         tl = new Vector2(Mathf.Max(tl.x, -10f), Mathf.Min(tl.y, 22f));
         br = new Vector2(Mathf.Min(br.x, 10f), Mathf.Max(br.y, 5));

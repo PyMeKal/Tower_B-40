@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NeuralNetworks.NN_Testing;
+using Unity.Mathematics;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
@@ -65,13 +66,15 @@ public class PathFinderAgent : MonoBehaviour
         {
             brain = agentInterface.receivedModel;
             if(agentInterface.mutate)
-                brain.Mutate(0.05f * agentInterface.mutationScale, 0.05f * agentInterface.mutationScale, 0.2f,
-                    1/128f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f, dropoutRate:0.1f);
+                brain.Mutate(0.15f * agentInterface.mutationScale, 0.1f * agentInterface.mutationScale, 0.5f,
+                    1/32f * agentInterface.reshuffleChanceScale, 1.5f, 1.5f, dropoutRate:0f);
         }
         else
         {
             // Construct Model
             
+            // 1. Megabrain: perhaps more adequate for general pathfinding (randomized maps)
+            /*
             // INPUT: 
             // disposition(2), deltax+y to target(2), ray data(rayCount), dispositionHistory(hc*2), sensorHistory(rayCount*hc), targetVisible(1), residual(rc)
             brain = new NeuralNetwork("Billy");
@@ -86,10 +89,22 @@ public class PathFinderAgent : MonoBehaviour
             // xy velocity(2), residual(rc)
             brain.AddLayer(2 + residualCount, NeuralNetwork.ActivationFunction.Sigmoid);
             brain.Compile(neuronDropoutRate:0.1f, weightDropoutRate:0.1f);
+            */
+            
+            // 2. Simpleton: simple architecture with only raycasts and distance + direction to target + visibility
+            brain = new NeuralNetwork("Simpleton");
+            brain.AddLayer(rayCount + 2 + 1, NeuralNetwork.ActivationFunction.Linear);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(32, NeuralNetwork.ActivationFunction.ReLU);
+            brain.AddLayer(16, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.AddLayer(2, NeuralNetwork.ActivationFunction.Sigmoid);
+            brain.Compile(neuronDropoutRate:0.1f, weightDropoutRate:0f);
         }
 
-        inputVector = new float[2 + 2 + rayCount + historyCount * (2 + rayCount) + 1 + residualCount];
-        outputVector = new float[2 + residualCount];
+        // inputVector = new float[2 + 2 + rayCount + historyCount * (2 + rayCount) + 1 + residualCount];
+        // outputVector = new float[2 + residualCount];
+        inputVector = new float[rayCount + 2 + 1];
+        outputVector = new float[2];
 
         agent = new Agent(gameObject, 0f, brain);
         
@@ -123,7 +138,8 @@ public class PathFinderAgent : MonoBehaviour
 
     void HandleComputation()
     {
-        float[] CalculateInputVector()
+        
+        /*float[] CalculateInputVector()
         {
             List<float> inputList = new List<float>();
             // 1. Disposition
@@ -195,16 +211,52 @@ public class PathFinderAgent : MonoBehaviour
             }
             
             return inputList.ToArray();
+        }*/
+
+        float[] CalculateInputVectorSimpleton()
+        {
+            List<float> inputList = new List<float>();
+            var position = transform.position;
+            var distance = Vector3.Distance(position, targetPos);
+            
+            // 1. Distance
+            inputList.Add(distance);
+            
+            // 2. Direction
+            inputList.Add(Mathf.Atan2(targetPos.y - position.y,targetPos.x - position.x));
+            
+            // 2. Sensor rays
+            float theta = 0f;
+            float[] distances = new float[rayCount];
+            for (int i = 0; i < rayCount; i++)
+            {
+                Vector2 dir = new Vector2(Mathf.Cos(theta), Mathf.Sin(theta));
+                RaycastHit2D col = Physics2D.Raycast(transform.position, dir, sensorRange, wallLayer);
+
+                if (col.collider != null)
+                    distances[i] = Vector3.Distance(transform.position, col.point);
+                else
+                    distances[i] = sensorRange + 2f;
+            
+                theta += 2 * Mathf.PI / rayCount;
+                inputList.Add(distances[i]);
+            }
+            
+            // 6. Target visible
+            inputList.Add(targetVisible ? 1f : 0f);
+            
+            return inputList.ToArray();
         }
 
-        inputVector = CalculateInputVector();
+        // inputVector = CalculateInputVector();
+        inputVector = CalculateInputVectorSimpleton();
         outputVector = brain.Compute(inputVector);
         
         rb.velocity = new Vector2(outputVector[0] - 0.5f,outputVector[1] - 0.5f) * (2 * baseSpeed);
-        for (int i = 0; i < residualCount; i++)
+        /*for (int i = 0; i < residualCount; i++)
         {
             residual[i] = outputVector[i + 2];
-        }
+        }*/
     }
 
     private bool targetReachedFlag;
@@ -243,7 +295,7 @@ public class PathFinderAgent : MonoBehaviour
     {
         if (IsLayerInMask(other.gameObject, wallLayer))
         {
-            penalty += 2f;
+            penalty += 0.2f;
         }
     }
     
@@ -251,7 +303,7 @@ public class PathFinderAgent : MonoBehaviour
     {
         if (IsLayerInMask(other.gameObject, wallLayer))
         {
-            penalty += 1f*Time.deltaTime;
+            penalty += 0.1f*Time.deltaTime;
         }
     }
 }
