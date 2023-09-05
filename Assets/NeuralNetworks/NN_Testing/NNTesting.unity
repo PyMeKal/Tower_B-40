@@ -9439,6 +9439,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PathFinder (95)
       objectReference: {fileID: 0}
+    - target: {fileID: 7799848046317027668, guid: 1aaef2e1d0a2ad54ebbf8f468f22b141, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8820830229118097799, guid: 1aaef2e1d0a2ad54ebbf8f468f22b141, type: 3}
       propertyPath: directLoadModel
       value: 
@@ -10666,7 +10670,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8820830229118097799, guid: 1aaef2e1d0a2ad54ebbf8f468f22b141, type: 3}
       propertyPath: directLoadModel
-      value: /model_Fittest/
+      value: /PF_1351/
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
