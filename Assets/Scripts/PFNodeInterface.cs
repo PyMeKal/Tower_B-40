@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 
 [SerializeField]
-public struct PFNode
+public class PFNode
 {
     public Vector2 position;
     public PFNode[] adjacentNodes;
@@ -12,7 +12,7 @@ public struct PFNode
 
 public class PFNodeInterface : MonoBehaviour
 {
-    private PFNode node;
+    public PFNode node = new PFNode();
 
     public List<Transform> adjacentNodeTransforms;
     
