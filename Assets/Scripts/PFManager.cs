@@ -15,6 +15,7 @@ public class PFManager : MonoBehaviour
     private Dictionary<PFNode, int> nodeIndexes;
     private int[] prevNodeIndexes;  // Previous PFNode the search algorithm came from (Dijkstra's)
     private float[] minDistanceSum;  // Shortest distance found so far for each vertex
+    private bool[] nodeChecked;
     public float[,] distanceMatrix;  // Stores distances between PFNodesd
     public int nodeCount;
     
@@ -28,6 +29,7 @@ public class PFManager : MonoBehaviour
 
         prevNodeIndexes = new int[nodeCount];
         minDistanceSum = new float[nodeCount];
+        nodeChecked = new bool[nodeCount];
         for (int i = 0; i < nodeCount; i++)
         {
             prevNodeIndexes[i] = -1;
@@ -39,8 +41,11 @@ public class PFManager : MonoBehaviour
         for (int i = 0; i < nodeCount; i++)
         {
             Transform nodeTransform = nodesFolderTransform.GetChild(i);
-            nodes[i] = nodeTransform.GetComponent<PFNodeInterface>().node;
+            PFNodeInterface nodeInterface = nodeTransform.GetComponent<PFNodeInterface>();
+            nodes[i] = nodeInterface.node;
+            nodeInterface.index = i;
             nodeIndexes.Add(nodes[i], i);
+            nodeTransform.GetComponent<SpriteRenderer>().color = Color.grey;
         }
 
         for (int i = 0; i < nodeCount; i++)
@@ -74,16 +79,18 @@ public class PFManager : MonoBehaviour
         
         while (step < maxStep)
         {
-            step++;
-
-            PFNode nextNode = currentNode.adjacentNodes[0];
-            float nextNodeMDS = Mathf.Infinity;  // MDS for Min Distance Sum
+            step++;;
+            int currentNodeIndex = nodeIndexes[currentNode];
+            
             foreach (var adjacentNode in currentNode.adjacentNodes)
             {
                 // # 1. Update MDS for this adjacent node
                 // What the [fuck] [kind [of code] is this]
-                int currentNodeIndex = nodeIndexes[currentNode];
                 int adjacentNodeIndex = nodeIndexes[adjacentNode];
+                
+                if(adjacentNodeIndex == currentNodeIndex) print("What the fuck");
+                
+                if(nodeChecked[adjacentNodeIndex]) continue;
                 
                 if (minDistanceSum[currentNodeIndex] +
                     distanceMatrix[currentNodeIndex, adjacentNodeIndex] < minDistanceSum[adjacentNodeIndex])
@@ -94,18 +101,23 @@ public class PFManager : MonoBehaviour
                     prevNodeIndexes[adjacentNodeIndex] = currentNodeIndex;
                 }
                 
-                // MDS for this adjacent node
-                float thisMDS = minDistanceSum[adjacentNodeIndex];
-                
-                // if this adjacent node is the closest from current node
-                if (thisMDS < nextNodeMDS)
+            }
+            nodeChecked[currentNodeIndex] = true;
+
+            float shortestMDS = Mathf.Infinity;
+            for (int i = 0; i < nodeCount; i++)
+            {
+                if(nodeChecked[i]) continue;
+
+                if (minDistanceSum[i] < shortestMDS)
                 {
-                    nextNodeMDS = thisMDS;
-                    nextNode = adjacentNode;
+                    shortestMDS = minDistanceSum[i];
+                    currentNode = nodes[i];
                 }
             }
-
-            currentNode = nextNode;
+                
+                
+            print("- " + nodeIndexes[currentNode]);
             if (currentNode == end)
             {
                 // Destination Reached!
@@ -136,14 +148,21 @@ public class PFManager : MonoBehaviour
         // If this works first try I will shit my pants
 
         PFNode start = nodes[0];
-        PFNode end = nodes[nodeCount - 1];
+        PFNode end = nodes[10];
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            PFNode[] path = GetShortestPath(start, end);
+            for (int i = 0; i < nodeCount; i++)
+            {
+                nodesFolderTransform.GetChild(i).GetComponent<SpriteRenderer>().color = Color.grey;
+            }
+            
+            
+            PFNode[] path = GetShortestPath(start, end, 9999);
             foreach (PFNode node in path)
             {
                 print(node.position);
+                nodesFolderTransform.GetChild(nodeIndexes[node]).GetComponent<SpriteRenderer>().color = Color.green;
             }    
         }
     }
