@@ -5,6 +5,73 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Tilemaps;
+
+public class PFGrid
+{
+    // Class for handling A* pathfinding for various agents.
+    // In this case, the mimic will use this for PF across short distances (inter-node)
+    public struct PFTile
+    {
+        // Yes, I named this "Tile" cause I already named PFNode for Dijkstra PF, when they're clearly vertices.
+        // Call me a genius
+        
+        public Vector3 worldPosition;
+        public bool walkable;
+        public int g, h, f;
+    }
+
+    public string name;
+    public int sizeX, sizeY;
+    public Tilemap tilemap;
+
+    private PFTile[,] tiles;
+
+    public PFGrid(string name, Tilemap tilemap)
+    {
+        this.name = name;
+        this.tilemap = tilemap;
+
+        var cellBounds = tilemap.cellBounds;
+        sizeX = cellBounds.xMax - cellBounds.xMin;
+        sizeY = cellBounds.yMax - cellBounds.yMin;
+        
+        tiles = new PFTile[sizeX, sizeY];
+        
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int y = 0; y < sizeY; y++)
+            {
+                // x, y variable for indexes in array PFTile[,] tiles (=Array Position)
+                // NOT tile positions in tilemap (=Tile Position)
+                
+                Vector3Int thisTilePos = new Vector3Int(x + cellBounds.xMin, y + cellBounds.yMin);
+                if (!tilemap.HasTile(thisTilePos))
+                {
+                    tiles[x, y].walkable = true;
+                }
+
+                tiles[x, y].worldPosition = tilemap.CellToWorld(thisTilePos);
+            }
+        }
+    }
+    
+    public Vector3Int GetTilePositionWorld(Vector3 pos)
+    {
+        return tilemap.WorldToCell(pos);
+    }
+
+    public Vector3Int GetTilePositionArray(Vector3 pos)
+    {
+        return new Vector3Int(Mathf.RoundToInt(pos.x + tilemap.cellBounds.xMin),
+            Mathf.RoundToInt(pos.y + tilemap.cellBounds.yMin));
+    }
+    
+    public Vector3[] GetAStarPath(Vector3 start, Vector3 end, int maxStep = 999)
+    {
+        
+    }
+}
 
 public class PFManager : MonoBehaviour
 {
@@ -12,11 +79,12 @@ public class PFManager : MonoBehaviour
     
     [SerializeField] private Transform nodesFolderTransform;
     public PFNode[] nodes;  // Determines PFNode index
+    public bool ensureEdgeLinks;  // Checks if adjacent vertices both have each other in their respective adjacentNodes array 
     private Dictionary<PFNode, int> nodeIndexes;
     private int[] prevNodeIndexes;  // Previous PFNode the search algorithm came from (Dijkstra's)
     private float[] minDistanceSum;  // Shortest distance found so far for each vertex
-    private bool[] nodeChecked;
-    public float[,] distanceMatrix;  // Stores distances between PFNodesd
+    private bool[] nodeChecked;  // True if node has been checked
+    public float[,] distanceMatrix;  // Stores distances between PFNodes
     public int nodeCount;
     
 
@@ -57,6 +125,14 @@ public class PFManager : MonoBehaviour
             
             for (int j = 0; j < adjacentNodes.Length; j++)
             {
+                // Ensure nodes are connected both ways
+                if (ensureEdgeLinks && !adjacentNodes[i].adjacentNodes.Contains(thisNode))
+                {
+                    adjacentNodes[i].adjacentNodes = adjacentNodes[i].adjacentNodes.Concat(new[] { thisNode }).ToArray();
+                    // Update distanceMatrix accordingly
+                    distanceMatrix[nodeIndexes[adjacentNodes[j]], i] = Vector2.Distance(thisNode.position, adjacentNodes[j].position);
+                }
+                
                 distanceMatrix[i, nodeIndexes[adjacentNodes[j]]] =
                     Vector2.Distance(thisNode.position, adjacentNodes[j].position);
             }
@@ -64,11 +140,6 @@ public class PFManager : MonoBehaviour
     }
     
     //-----------------------------------------------------------------------------------------------------------------
-    
-    private void Start()
-    {
-        SetupNodes();
-    }
 
     public PFNode[] GetShortestPath(PFNode start, PFNode end, int maxStep=999)
     {
@@ -166,8 +237,17 @@ public class PFManager : MonoBehaviour
             }    
         }
     }
+    
+    private void Start()
+    {
+        SetupNodes();
+    }
+
+    public Tilemap tilemap;
+    
     private void Update()
     {
-        DebugPF();
+        // DebugPF();
+        print(tilemap.cellBounds.xMin + " / " + tilemap.cellBounds.yMin);
     }
 }
