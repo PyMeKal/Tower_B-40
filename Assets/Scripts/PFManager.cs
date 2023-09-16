@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
@@ -13,26 +14,35 @@ public class PFGrid
     // In this case, the mimic will use this for PF across short distances (inter-node)
     public struct PFTile
     {
-        // Yes, I named this "Tile" cause I already named PFNode for Dijkstra PF, when they're clearly vertices.
+        // Yes, I named this "Tile" cause I already named PFNode for Dijkstra PF, because they're clearly vertices.
         // Call me a genius
         
         public Vector3 worldPosition;
         public bool walkable;
+
+        public Vector3Int cameFrom;
+        // G = distance from starting node
+        // H = distance to end node
+        // F = G + H
         public int g, h, f;
     }
 
     public string name;
     public int sizeX, sizeY;
     public Tilemap tilemap;
-
+    private BoundsInt cellBounds;
+    
     private PFTile[,] tiles;
+
+    private const int DIAGONAL = 14;
+    private const int STRAIGHT = 10;
 
     public PFGrid(string name, Tilemap tilemap)
     {
         this.name = name;
         this.tilemap = tilemap;
 
-        var cellBounds = tilemap.cellBounds;
+        cellBounds = tilemap.cellBounds;
         sizeX = cellBounds.xMax - cellBounds.xMin;
         sizeY = cellBounds.yMax - cellBounds.yMin;
         
@@ -63,13 +73,161 @@ public class PFGrid
 
     public Vector3Int GetTilePositionArray(Vector3 pos)
     {
-        return new Vector3Int(Mathf.RoundToInt(pos.x + tilemap.cellBounds.xMin),
-            Mathf.RoundToInt(pos.y + tilemap.cellBounds.yMin));
+        return new Vector3Int(Mathf.RoundToInt(pos.x + cellBounds.xMin),
+            Mathf.RoundToInt(pos.y + cellBounds.yMin));
+    }
+
+    public Vector3Int GetArrayPositionTile(Vector3Int pos)
+    {
+        return new Vector3Int(pos.x - cellBounds.xMin, pos.y - cellBounds.yMin);
+    }
+
+    public Vector3Int GetArrayPositionWorld(Vector3 pos)
+    {
+        return GetArrayPositionTile(GetTilePositionWorld(pos));
+    }
+
+    public void ResetTiles()
+    {
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int y = 0; y < sizeY; y++)
+            {
+                tiles[x, y].f = 0;
+                tiles[x, y].g = 9999;
+                tiles[x, y].h = 0;
+                tiles[x, y].cameFrom = Vector3Int.zero;
+            }
+        }
+    }
+
+    private Vector3Int[] GetNeighbourTiles(Vector3Int pos)
+    {
+        // Ripped from my GOL code in python
+        
+        List<Vector3Int> neighbours = new List<Vector3Int>();
+        List<int> checkX = new List<int>(3) { -1, 0, 1 };
+        List<int> checkY = new List<int>(3) { -1, 0, 1 };
+
+        if (pos.x == 0)
+            checkX.Remove(-1);
+        if (pos.x == sizeX - 1)
+            checkX.Remove(1);
+        if (pos.y == 0)
+            checkY.Remove(-1);
+        if (pos.y == sizeY - 1)
+            checkY.Remove(1);
+
+        foreach (int deltaX in checkX)
+        {
+            foreach (var deltaY in checkY)
+            {
+                if(deltaX == 0 && deltaY == 0)
+                    continue;
+                
+                neighbours.Add(pos + new Vector3Int(deltaX, deltaY));
+            }
+        }
+
+        return neighbours.ToArray();
+    }
+
+    private int GetDistanceCost(Vector3Int a, Vector3Int b)
+    {
+        int deltaX = Mathf.Abs(a.x - b.x);
+        int deltaY = Mathf.Abs(a.y - b.y);
+
+        return STRAIGHT * Mathf.Abs(deltaX - deltaY) + DIAGONAL * Mathf.Min(deltaX, deltaY);
     }
     
-    public Vector3[] GetAStarPath(Vector3 start, Vector3 end, int maxStep = 999)
+    public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 999)
     {
+        Vector3Int start = GetArrayPositionWorld(startWorldPos);
+        Vector3Int end = GetArrayPositionWorld(endWorldPos);
         
+        // Since we're working with arrays of structs, we should store each index for x&y instead of the tile data.
+        // -> access PFGrid.tiles directly.
+        // might use z for storing f costs. For now, only x and y is used in each Vector3Int.
+        List<Vector3Int> openList = new List<Vector3Int>();
+        List<Vector3Int> closedList = new List<Vector3Int>();
+        
+        ResetTiles();
+        
+        openList.Add(start);
+        tiles[start.x, start.y].g = 0;
+        tiles[start.x, start.y].h = GetDistanceCost(start, end);
+        tiles[start.x, start.y].f = GetDistanceCost(start, end);
+        Vector3Int currentPos = start;
+
+        int step = 0;
+        
+        while (openList.Count > 0 && step < maxStep)
+        {
+            step++;
+            Vector3Int[] neighbours = GetNeighbourTiles(currentPos);
+            foreach (var neighbour in neighbours)
+            {
+                PFTile neighbourTile = tiles[neighbour.x, neighbour.y];  // value type. read only.
+                
+                if(closedList.Contains(neighbour)) continue;
+                
+                if (!neighbourTile.walkable)
+                {
+                    closedList.Add(neighbour);
+                    continue;
+                }
+                
+                // Calculate costs for this neighbour tile
+                // -------------------------------------------------------
+                PFTile currentTile = tiles[currentPos.x, currentPos.y];
+                int g = (neighbour - currentPos).x * (neighbour - currentPos).y == 0 ? 
+                    STRAIGHT + currentTile.g : DIAGONAL + currentTile.g;
+                int h = GetDistanceCost(neighbour, end);
+                
+                if (tiles[neighbour.x, neighbour.y].g < g)
+                {
+                    // Do not update g(and f) if it's original value smaller than new value
+                    g = tiles[neighbour.x, neighbour.y].g;
+                }
+                else
+                {
+                    // Update g(and f) along with its cameFrom, which would now be currentPos
+                    tiles[neighbour.x, neighbour.y].cameFrom = currentPos;
+                }
+            
+                int f = g + h;
+                // -------------------------------------------------------
+
+                tiles[neighbour.x, neighbour.y].g = g;
+                tiles[neighbour.x, neighbour.y].h = h;
+                tiles[neighbour.x, neighbour.y].f = f;
+                
+                
+                openList.Add(neighbour);
+
+                if (neighbour == end)
+                {
+                    // Pathfinding Finished!!!
+                    
+                }
+            }
+
+            openList.Remove(currentPos);
+            closedList.Add(currentPos);
+            
+            int minFCost = 9999;
+            foreach (Vector3Int tilePos in openList)
+            {
+                if (tiles[tilePos.x, tilePos.y].f < minFCost)
+                {
+                    minFCost = tiles[tilePos.x, tilePos.y].f;
+                    currentPos = tilePos;
+                }
+            }
+        }
+        
+        Debug.LogWarning("Pathfinding Failed: from " + startWorldPos + " to " + endWorldPos);
+        return Array.Empty<Vector3>();
     }
 }
 
