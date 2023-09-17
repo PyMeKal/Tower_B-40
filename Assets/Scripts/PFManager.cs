@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
 using Unity.VisualScripting;
+using Unity.VisualScripting.FullSerializer;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -139,6 +140,29 @@ public class PFGrid
 
         return STRAIGHT * Mathf.Abs(deltaX - deltaY) + DIAGONAL * Mathf.Min(deltaX, deltaY);
     }
+
+    private Vector3Int[] RetracePath(Vector3Int start, Vector3Int end)
+    {
+        List<Vector3Int> pathList = new List<Vector3Int>();
+        pathList.Add(end);
+
+        Vector3Int thisPos = end;
+        
+        int maxStep = 9999;
+        while (maxStep > 0)
+        {
+            maxStep--;
+
+            thisPos = tiles[thisPos.x, thisPos.y].cameFrom;
+            pathList.Add(thisPos);
+            if(thisPos == start)
+                break;
+        }
+
+        pathList.Reverse();
+
+        return pathList.ToArray();
+    }
     
     public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 999)
     {
@@ -164,6 +188,7 @@ public class PFGrid
         while (openList.Count > 0 && step < maxStep)
         {
             step++;
+            
             Vector3Int[] neighbours = GetNeighbourTiles(currentPos);
             foreach (var neighbour in neighbours)
             {
@@ -183,8 +208,7 @@ public class PFGrid
                 int g = (neighbour - currentPos).x * (neighbour - currentPos).y == 0 ? 
                     STRAIGHT + currentTile.g : DIAGONAL + currentTile.g;
                 int h = GetDistanceCost(neighbour, end);
-                
-                if (tiles[neighbour.x, neighbour.y].g < g)
+                if (tiles[neighbour.x, neighbour.y].g <= g)
                 {
                     // Do not update g(and f) if it's original value smaller than new value
                     g = tiles[neighbour.x, neighbour.y].g;
@@ -207,8 +231,11 @@ public class PFGrid
 
                 if (neighbour == end)
                 {
-                    // Pathfinding Finished!!!
-                    
+                    // Pathfinding Complete
+                    Debug.Log("Pathfinding Complete");
+                    Vector3Int[] arrayPath = RetracePath(start, end);
+                    Vector3[] worldPath = arrayPath.Select(p => tiles[p.x, p.y].worldPosition).ToArray();
+                    return worldPath;
                 }
             }
 
@@ -218,7 +245,7 @@ public class PFGrid
             int minFCost = 9999;
             foreach (Vector3Int tilePos in openList)
             {
-                if (tiles[tilePos.x, tilePos.y].f < minFCost)
+                if (tiles[tilePos.x, tilePos.y].f < minFCost && !closedList.Contains(tilePos))
                 {
                     minFCost = tiles[tilePos.x, tilePos.y].f;
                     currentPos = tilePos;
@@ -244,6 +271,8 @@ public class PFManager : MonoBehaviour
     private bool[] nodeChecked;  // True if node has been checked
     public float[,] distanceMatrix;  // Stores distances between PFNodes
     public int nodeCount;
+
+    public Tilemap aStarTilemap;
     
 
     void SetupNodes()
@@ -395,17 +424,35 @@ public class PFManager : MonoBehaviour
             }    
         }
     }
+
+    private PFGrid grid;
+    private Vector3[] path = Array.Empty<Vector3>();
+    void DebugAStar()
+    {
+        Vector3 start = Vector3.zero;
+        Vector3 end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            path = grid.GetAStarPath(start, end);
+        }
+    }
     
     private void Start()
     {
         SetupNodes();
-    }
 
-    public Tilemap tilemap;
+        grid = new PFGrid("x0.5", aStarTilemap);
+        
+    }
     
     private void Update()
     {
-        // DebugPF();
-        print(tilemap.cellBounds.xMin + " / " + tilemap.cellBounds.yMin);
+        DebugPF();
+        DebugAStar();
+        for (int i = 1; i < path.Length; i++)
+        {
+            Debug.DrawLine(path[i-1], path[i]);
+        }
     }
 }
