@@ -62,7 +62,7 @@ public class PFGrid
                     tiles[x, y].walkable = true;
                 }
 
-                tiles[x, y].worldPosition = tilemap.CellToWorld(thisTilePos);
+                tiles[x, y].worldPosition = GetWorldPositionTile(thisTilePos, true);
             }
         }
     }
@@ -88,6 +88,14 @@ public class PFGrid
         return GetArrayPositionTile(GetTilePositionWorld(pos));
     }
 
+    public Vector3 GetWorldPositionTile(Vector3Int pos, bool centerTiles)
+    {
+        Vector3 worldPos = tilemap.CellToWorld(pos);
+        if (centerTiles)
+            worldPos += tilemap.cellSize * 0.5f;
+        return worldPos;
+    }
+
     public void ResetTiles()
     {
         for (int x = 0; x < sizeX; x++)
@@ -102,9 +110,12 @@ public class PFGrid
         }
     }
 
+    /*
     private Vector3Int[] GetNeighbourTiles(Vector3Int pos)
     {
         // Ripped from my GOL code in python
+        // Simple algorithm wise
+        // Honestly quite shit performance wise with the list creation overhead
         
         List<Vector3Int> neighbours = new List<Vector3Int>();
         List<int> checkX = new List<int>(3) { -1, 0, 1 };
@@ -131,6 +142,33 @@ public class PFGrid
         }
 
         return neighbours.ToArray();
+    }*/
+    
+    private Vector3Int[] GetNeighbourTiles(Vector3Int pos)
+    {
+        // Optimized Code feat. GPT4
+        List<Vector3Int> neighbours = new List<Vector3Int>(8); // At most 8 neighbours
+
+        for (int deltaX = -1; deltaX <= 1; deltaX++)
+        {
+            for (int deltaY = -1; deltaY <= 1; deltaY++)
+            {
+                // Skip the current tile
+                if (deltaX == 0 && deltaY == 0)
+                    continue;
+
+                int newX = pos.x + deltaX;
+                int newY = pos.y + deltaY;
+
+                // Check for borders
+                if (newX < 0 || newX >= sizeX || newY < 0 || newY >= sizeY)
+                    continue;
+
+                neighbours.Add(new Vector3Int(newX, newY, 0));
+            }
+        }
+
+        return neighbours.ToArray();
     }
 
     private int GetDistanceCost(Vector3Int a, Vector3Int b)
@@ -143,8 +181,7 @@ public class PFGrid
 
     private Vector3Int[] RetracePath(Vector3Int start, Vector3Int end)
     {
-        List<Vector3Int> pathList = new List<Vector3Int>();
-        pathList.Add(end);
+        List<Vector3Int> pathList = new List<Vector3Int> { end };
 
         Vector3Int thisPos = end;
         
@@ -205,6 +242,7 @@ public class PFGrid
                 // Calculate costs for this neighbour tile
                 // -------------------------------------------------------
                 PFTile currentTile = tiles[currentPos.x, currentPos.y];
+                
                 int g = (neighbour - currentPos).x * (neighbour - currentPos).y == 0 ? 
                     STRAIGHT + currentTile.g : DIAGONAL + currentTile.g;
                 int h = GetDistanceCost(neighbour, end);
@@ -216,14 +254,16 @@ public class PFGrid
                 else
                 {
                     // Update g(and f) along with its cameFrom, which would now be currentPos
+                    tiles[neighbour.x, neighbour.y].g = g;
                     tiles[neighbour.x, neighbour.y].cameFrom = currentPos;
                 }
             
                 int f = g + h;
                 // -------------------------------------------------------
-
-                tiles[neighbour.x, neighbour.y].g = g;
-                tiles[neighbour.x, neighbour.y].h = h;
+                
+                // Not actually necessary.
+                // tiles[neighbour.x, neighbour.y].h = h; 
+                
                 tiles[neighbour.x, neighbour.y].f = f;
                 
                 
@@ -328,7 +368,7 @@ public class PFManager : MonoBehaviour
     
     //-----------------------------------------------------------------------------------------------------------------
 
-    public PFNode[] GetShortestPath(PFNode start, PFNode end, int maxStep=999)
+    public PFNode[] GetDijkstraPath(PFNode start, PFNode end, int maxStep=999)
     {
         int step = 0;
         PFNode currentNode = start;
@@ -416,7 +456,7 @@ public class PFManager : MonoBehaviour
             }
             
             
-            PFNode[] path = GetShortestPath(start, end, 9999);
+            PFNode[] path = GetDijkstraPath(start, end, 9999);
             foreach (PFNode node in path)
             {
                 print(node.position);
