@@ -436,6 +436,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 495808036}
+  - component: {fileID: 495808038}
   - component: {fileID: 495808037}
   m_Layer: 0
   m_Name: _GM
@@ -476,6 +477,20 @@ MonoBehaviour:
   ensureEdgeLinks: 1
   nodeCount: 0
   aStarTilemap: {fileID: 689723265}
+--- !u!114 &495808038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 495808035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67bc3326a3e4e1647a23a6a3c17578f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  physicsSpeedMutlitplier: 1
+  standardAStarTilemap: {fileID: 689723265}
 --- !u!1 &593895068
 GameObject:
   m_ObjectHideFlags: 0
