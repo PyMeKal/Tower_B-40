@@ -92,7 +92,7 @@ public class MimicAI : MonoBehaviour
         pathQueue = new Queue<Vector3>();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         switch (state)
         {
@@ -180,6 +180,7 @@ public class MimicAI : MonoBehaviour
             }
         }
         pathProcessed.Add(path.Last());
+        // pathProcessed.ForEach(tile => print(tile));
         pathProcessed.ForEach(tile => pathQueue.Enqueue(tile));
     }
     
@@ -197,7 +198,7 @@ public class MimicAI : MonoBehaviour
     
     void STATE_Search()
     {
-        if (searchState.refreshPathClockTimer <= 0f && !searchState.atDestination)
+        if (searchState.refreshPathClockTimer <= 0f && searchState.atDestination)
         {
             searchState.refreshPathClockTimer = searchState.refreshPathClock;
             EnqueuePath(playerTransform.position, true);
@@ -205,7 +206,7 @@ public class MimicAI : MonoBehaviour
 
         Vector3 target;
         searchState.atDestination = !pathQueue.TryPeek(out target);
-        
+        print("Queue Length: " + pathQueue.Count);
         // #1. Destination reached (path queue empty)
         if (searchState.atDestination)
         {
@@ -216,14 +217,14 @@ public class MimicAI : MonoBehaviour
         {
             Vector3 direction = target - transform.position;
             rb.velocity = direction.normalized * 2f; // Placeholder
-            if (direction.sqrMagnitude < 1f)
+            if (direction.sqrMagnitude < 0.5f)
             {
                 pathQueue.Dequeue();
             }
         }
         
         // Update searchState
-        searchState.refreshPathClockTimer -= Time.deltaTime;
+        searchState.refreshPathClockTimer -= Time.fixedDeltaTime;
 
     }
 }

@@ -8,6 +8,7 @@ using Unity.VisualScripting.FullSerializer;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Random = UnityEngine.Random;
 
 public class PFGrid
 {
@@ -338,15 +339,9 @@ public class PFManager : MonoBehaviour
     public int nodeCount;
 
     public Tilemap aStarTilemap;
-    
 
-    void SetupNodes()
+    void ClearCache()
     {
-        nodeCount = nodesFolderTransform.childCount;
-        nodes = new PFNode[nodeCount];
-        nodeIndexes = new Dictionary<PFNode, int>();
-        distanceMatrix = new float[nodeCount, nodeCount];
-
         prevNodeIndexes = new int[nodeCount];
         minDistanceSum = new float[nodeCount];
         nodeChecked = new bool[nodeCount];
@@ -355,8 +350,18 @@ public class PFManager : MonoBehaviour
             prevNodeIndexes[i] = -1;
             minDistanceSum[i] = Mathf.Infinity;
         }
+    }
+    
+    
+    void SetupNodes()
+    {
+        nodeCount = nodesFolderTransform.childCount;
+        nodes = new PFNode[nodeCount];
+        nodeIndexes = new Dictionary<PFNode, int>();
+        distanceMatrix = new float[nodeCount, nodeCount];
 
-
+        ClearCache();
+        
         // #1 Setup nodes array
         for (int i = 0; i < nodeCount; i++)
         {
@@ -393,8 +398,16 @@ public class PFManager : MonoBehaviour
     
     //-----------------------------------------------------------------------------------------------------------------
 
-    public PFNode[] GetDijkstraPath(PFNode start, PFNode end, int maxStep=999)
+    public PFNode[] GetDijkstraPath(PFNode start, PFNode end, int maxStep=9999)
     {
+        if (start == end)
+        {
+            Debug.LogWarning("Starting node must not equal end node");
+            return Array.Empty<PFNode>();
+        }
+        
+        
+        ClearCache();
         int step = 0;
         PFNode currentNode = start;
         minDistanceSum[nodeIndexes[start]] = 0f;
@@ -471,8 +484,8 @@ public class PFManager : MonoBehaviour
         // Literally used for debugging.
         // If this works first try I will shit my pants
 
-        PFNode start = nodes[0];
-        PFNode end = nodes[10];
+        PFNode start = nodes[Random.Range(0, nodeCount-1)];
+        PFNode end = nodes[Random.Range(0, nodeCount-1)];
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -515,10 +528,11 @@ public class PFManager : MonoBehaviour
     private void Update()
     {
         DebugPF();
-        DebugAStar();
+        
+        /*DebugAStar();
         for (int i = 1; i < path.Length; i++)
         {
             Debug.DrawLine(path[i-1], path[i]);
-        }
+        }*/
     }
 }
