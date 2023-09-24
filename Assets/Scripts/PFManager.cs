@@ -378,9 +378,9 @@ public class PFManager : MonoBehaviour
             for (int j = 0; j < adjacentNodes.Length; j++)
             {
                 // Ensure nodes are connected both ways
-                if (ensureEdgeLinks && !adjacentNodes[i].adjacentNodes.Contains(thisNode))
+                if (ensureEdgeLinks && !adjacentNodes[j].adjacentNodes.Contains(thisNode))
                 {
-                    adjacentNodes[i].adjacentNodes = adjacentNodes[i].adjacentNodes.Concat(new[] { thisNode }).ToArray();
+                    adjacentNodes[j].adjacentNodes = adjacentNodes[j].adjacentNodes.Concat(new[] { thisNode }).ToArray();
                     // Update distanceMatrix accordingly
                     distanceMatrix[nodeIndexes[adjacentNodes[j]], i] = Vector2.Distance(thisNode.position, adjacentNodes[j].position);
                 }
@@ -440,7 +440,7 @@ public class PFManager : MonoBehaviour
             }
                 
                 
-            print("- " + nodeIndexes[currentNode]);
+            // print("- " + nodeIndexes[currentNode]);
             if (currentNode == end)
             {
                 // Destination Reached!
@@ -462,6 +462,7 @@ public class PFManager : MonoBehaviour
 
         // No path found within max step.
         Debug.LogWarning("No path found :(");
+        Debug.Log(start.position + " -> " + end.position);
         return Array.Empty<PFNode>();
     }
 

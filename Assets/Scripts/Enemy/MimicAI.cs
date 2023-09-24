@@ -1,5 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using UnityEditor;
 using UnityEngine;
 
 public class MimicNode
@@ -38,10 +41,11 @@ public class MimicAI : MonoBehaviour
     [SerializeField][Range(0f, 1f)] private float smallNodeChance;
     [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float nodeSpawnArea;
 
-    [Header("\nAI")]
+    [Header("\nAI")] 
+    public PFGrid grid;
     public MimicState state;
     public Vector3 destination;
-    private Queue<Vector3> pathQueue;
+    public Queue<Vector3> pathQueue;
 
     void CreateNodes(int n)
     {
@@ -81,9 +85,11 @@ public class MimicAI : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         pfManager = GM.GetPFManager();
+        grid = new ("mimic", GM.GetGM().standardAStarTilemap);
         CreateNodes(numNodes);
-        state = MimicState.Sleep;
+        state = MimicState.Search;
         playerTransform = GM.GetPlayer().transform;
+        pathQueue = new Queue<Vector3>();
     }
 
     void Update()
@@ -117,22 +123,107 @@ public class MimicAI : MonoBehaviour
         return nearestNode;
     }
 
+    void EnqueuePath(Vector3 target, bool clear=false)
+    {
+        if(clear)
+            pathQueue.Clear();
+        
+        PFNode nearestNode = GetNearestNode(transform.position);
+        PFNode nearestDestinationNode = GetNearestNode(target);
+        List<Vector3> path = new List<Vector3>();
+        
+        if (nearestNode != nearestDestinationNode)
+        {
+            // #1. start node != end node
+            PFNode[] nodePath = pfManager.GetDijkstraPath(nearestNode, nearestDestinationNode);
+        
+            for (int i = 0; i < nodePath.Length - 1; i++)
+            {
+                Vector3[] pathChunk = grid.GetAStarPath(nodePath[i].position, nodePath[i + 1].position,
+                    wCost: 10, preventCornerCutting: true);
+            
+                path.AddRange(pathChunk);
+            }
+        }
+
+        // Process path to only include key tiles around turns instead of the entire path
+        /*
+         *  --------
+         *          \
+         *           \
+         *            \
+         *             -------
+         *  would now be
+         *
+         *  -       -
+         *           \
+         *
+         *             \
+         *              -    -
+         */
+        else
+        {
+            // #2. start node == end node
+            path = grid.GetAStarPath(transform.position, target).ToList();
+        }
+        print(path.Count);
+        List<Vector3> pathProcessed = new List<Vector3> {path[0]};
+        for (int i = 1; i < path.Count-1; i++)
+        {
+            Vector3 delta1, delta2;
+            delta1 = path[i] - path[i - 1];
+            delta2 = path[i + 1] - path[i];
+
+            if ((delta2 - delta1).sqrMagnitude > 0.01f)
+            {
+                pathProcessed.Add(path[i]);
+            }
+        }
+        pathProcessed.Add(path.Last());
+        pathProcessed.ForEach(tile => pathQueue.Enqueue(tile));
+    }
+    
+    // Variables for STATE: Search
+    [System.Serializable]
+    public struct MimicSearchState
+    {
+        public float refreshPathClock;
+        [HideInInspector] public float refreshPathClockTimer;
+        [HideInInspector] public bool atDestination;
+    }
+
+    [Header("Variables for State: Search")]
+    public MimicSearchState searchState;
+    
     void STATE_Search()
     {
-        destination = playerTransform.position;
-        PFNode nearestNode = GetNearestNode(transform.position);
-        PFNode nearestDestinationNode = GetNearestNode(destination);
-
-        PFNode[] nodePath = pfManager.GetDijkstraPath(nearestNode, nearestDestinationNode);
-        Vector3[][] paths = new Vector3[nodePath.Length][];
-
-        PFGrid grid = new PFGrid("mimic", GM.GetGM().standardAStarTilemap);
-        
-        for (int i = 0; i < nodePath.Length; i++)
+        if (searchState.refreshPathClockTimer <= 0f && !searchState.atDestination)
         {
-            paths[i] = grid.GetAStarPath(nodePath[i].position, nodePath[i + 1].position,
-                wCost: 10, preventCornerCutting: true);
-            //for(int j = 0; j < )
+            searchState.refreshPathClockTimer = searchState.refreshPathClock;
+            EnqueuePath(playerTransform.position, true);
         }
+
+        Vector3 target;
+        searchState.atDestination = !pathQueue.TryPeek(out target);
+        
+        // #1. Destination reached (path queue empty)
+        if (searchState.atDestination)
+        {
+            print("Destination Reached");
+        }
+        // #2. Destination not reached
+        else
+        {
+            Vector3 direction = target - transform.position;
+            rb.velocity = direction.normalized * 2f; // Placeholder
+            if (direction.sqrMagnitude < 1f)
+            {
+                pathQueue.Dequeue();
+            }
+        }
+        
+        // Update searchState
+        searchState.refreshPathClockTimer -= Time.deltaTime;
+
     }
 }
