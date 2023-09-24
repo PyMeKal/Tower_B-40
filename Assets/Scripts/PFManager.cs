@@ -24,8 +24,10 @@ public class PFGrid
         public Vector3Int cameFrom;
         // G = distance from starting node
         // H = distance to end node
-        // F = G + H
+        // F = G + H (+ W)
         public int g, h, f;
+        // W = wall proximity cost. 
+        public int w;
     }
 
     public string name;
@@ -201,7 +203,8 @@ public class PFGrid
         return pathList.ToArray();
     }
     
-    public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 999)
+    public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 999, int wCost = 0, 
+        bool preventCornerCutting = false)
     {
         Vector3Int start = GetArrayPositionWorld(startWorldPos);
         Vector3Int end = GetArrayPositionWorld(endWorldPos);
@@ -257,8 +260,20 @@ public class PFGrid
                     tiles[neighbour.x, neighbour.y].g = g;
                     tiles[neighbour.x, neighbour.y].cameFrom = currentPos;
                 }
-            
-                int f = g + h;
+
+                int w = 0;
+                if (wCost>0)
+                {
+                    Vector3Int[] neighbourNeighbours = GetNeighbourTiles(neighbour);
+                    if (neighbourNeighbours.Any(n => !tiles[n.x, n.y].walkable))
+                    {
+                        w = wCost;
+                        // tiles[neighbour.x, neighbour.y].w = 3;
+                    }
+                }
+                
+                
+                int f = g + h + w;
                 // -------------------------------------------------------
                 
                 // Not actually necessary.
@@ -285,6 +300,16 @@ public class PFGrid
             int minFCost = 9999;
             foreach (Vector3Int tilePos in openList)
             {
+                if (preventCornerCutting)
+                {
+                    Vector3Int deltaPos = tilePos - currentPos;
+                    if (deltaPos.x != 0 && deltaPos.y != 0 && 
+                        (!tiles[tilePos.x, currentPos.y].walkable || !tiles[currentPos.x, tilePos.y].walkable))
+                    {
+                        continue;
+                    }
+                }
+                
                 if (tiles[tilePos.x, tilePos.y].f < minFCost && !closedList.Contains(tilePos))
                 {
                     minFCost = tiles[tilePos.x, tilePos.y].f;
@@ -474,7 +499,7 @@ public class PFManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            path = grid.GetAStarPath(start, end);
+            path = grid.GetAStarPath(start, end, wCost:10, preventCornerCutting:true);
         }
     }
     
