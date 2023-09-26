@@ -135,44 +135,58 @@ public class MimicAI : MonoBehaviour
         if (nearestNode != nearestDestinationNode)
         {
             // #1. start node != end node
-            PFNode[] nodePath = pfManager.GetDijkstraPath(nearestNode, nearestDestinationNode);
-        
+            Vector2[] nodePath = 
+                pfManager.GetDijkstraPath(nearestNode, nearestDestinationNode, debug:true).Select(node => node.position).ToArray();
+
+            if (Vector3.Distance(nodePath[0], nodePath[1]) >
+                Vector3.Distance(transform.position, nodePath[1]))
+                nodePath = nodePath.Skip(1).ToArray();
+            
+            path.AddRange(grid.GetAStarPath(transform.position, nodePath[0]));
+            
             for (int i = 0; i < nodePath.Length - 1; i++)
             {
-                Vector3[] pathChunk = grid.GetAStarPath(nodePath[i].position, nodePath[i + 1].position,
+                Vector3[] pathChunk = grid.GetAStarPath(nodePath[i], nodePath[i + 1],
                     wCost: 10, preventCornerCutting: true);
             
                 path.AddRange(pathChunk);
             }
+            
+            path.AddRange(grid.GetAStarPath(path.Last(), target));
         }
-
+        else
+        {
+            // #2. start node == end node
+            path = grid.GetAStarPath(transform.position, target).ToList();
+        }
+        
         // Process path to only include key tiles around turns instead of the entire path
         /*
          *  --------
          *          \
          *           \
          *            \
-         *             -------
+         *             ------->
          *  would now be
          *
          *  -       -
          *           \
          *
          *             \
-         *              -    -
+         *              -    ->
          */
-        else
+
+        if (path.Count == 0)
         {
-            // #2. start node == end node
-            path = grid.GetAStarPath(transform.position, target).ToList();
+            // Don't do enqueues if path is empty
+            return;
         }
-        print(path.Count);
+        
         List<Vector3> pathProcessed = new List<Vector3> {path[0]};
         for (int i = 1; i < path.Count-1; i++)
         {
-            Vector3 delta1, delta2;
-            delta1 = path[i] - path[i - 1];
-            delta2 = path[i + 1] - path[i];
+            var delta1 = path[i] - path[i - 1];
+            var delta2 = path[i + 1] - path[i];
 
             if ((delta2 - delta1).sqrMagnitude > 0.01f)
             {
@@ -181,6 +195,9 @@ public class MimicAI : MonoBehaviour
         }
         pathProcessed.Add(path.Last());
         // pathProcessed.ForEach(tile => print(tile));
+
+        // Head straight towards 1st node if it's closer than 0st node
+        
         pathProcessed.ForEach(tile => pathQueue.Enqueue(tile));
     }
     
@@ -198,15 +215,22 @@ public class MimicAI : MonoBehaviour
     
     void STATE_Search()
     {
-        if (searchState.refreshPathClockTimer <= 0f && searchState.atDestination)
+        void ResetDestination()
+        {
+            destination = playerTransform.position;
+            searchState.atDestination = false;
+        }
+        
+        
+        if (searchState.refreshPathClockTimer <= 0f)
         {
             searchState.refreshPathClockTimer = searchState.refreshPathClock;
+            ResetDestination();
             EnqueuePath(playerTransform.position, true);
         }
 
         Vector3 target;
         searchState.atDestination = !pathQueue.TryPeek(out target);
-        print("Queue Length: " + pathQueue.Count);
         // #1. Destination reached (path queue empty)
         if (searchState.atDestination)
         {
@@ -216,7 +240,7 @@ public class MimicAI : MonoBehaviour
         else
         {
             Vector3 direction = target - transform.position;
-            rb.velocity = direction.normalized * 2f; // Placeholder
+            rb.velocity = direction.normalized * 4f; // Placeholder
             if (direction.sqrMagnitude < 0.5f)
             {
                 pathQueue.Dequeue();

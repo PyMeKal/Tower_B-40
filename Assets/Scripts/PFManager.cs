@@ -209,7 +209,19 @@ public class PFGrid
     {
         Vector3Int start = GetArrayPositionWorld(startWorldPos);
         Vector3Int end = GetArrayPositionWorld(endWorldPos);
-        
+
+        if (start == end)
+        {
+            Debug.LogWarning("Start equals end");
+            return Array.Empty<Vector3>();
+        }
+
+        if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
+        {
+            Debug.LogWarning("Start or end not reachable");
+            return Array.Empty<Vector3>();
+        }
+            
         // Since we're working with arrays of structs, we should store each index for x&y instead of the tile data.
         // -> access PFGrid.tiles directly.
         // might use z for storing f costs. For now, only x and y is used in each Vector3Int.
@@ -288,7 +300,6 @@ public class PFGrid
                 if (neighbour == end)
                 {
                     // Pathfinding Complete
-                    Debug.Log("Pathfinding Complete");
                     Vector3Int[] arrayPath = RetracePath(start, end);
                     Vector3[] worldPath = arrayPath.Select(p => tiles[p.x, p.y].worldPosition).ToArray();
                     return worldPath;
@@ -398,16 +409,32 @@ public class PFManager : MonoBehaviour
     
     //-----------------------------------------------------------------------------------------------------------------
 
-    public PFNode[] GetDijkstraPath(PFNode start, PFNode end, int maxStep=9999)
+    public PFNode[] GetDijkstraPath(PFNode start, PFNode end, int maxStep=9999, bool debug = false)
     {
+        void DebugDijkstra(List<PFNode> path)
+        {
+            for (int i = 0; i < nodeCount; i++)
+            {
+                nodesFolderTransform.GetChild(i).GetComponent<SpriteRenderer>().color = Color.grey;
+            }
+            
+            foreach (var node in path)
+            {
+                nodesFolderTransform.GetChild(nodeIndexes[node]).GetComponent<SpriteRenderer>().color = Color.blue;
+            }
+            nodesFolderTransform.GetChild(nodeIndexes[start]).GetComponent<SpriteRenderer>().color = Color.green;
+            nodesFolderTransform.GetChild(nodeIndexes[end]).GetComponent<SpriteRenderer>().color = Color.red;
+            
+        }
+        
         if (start == end)
         {
             Debug.LogWarning("Starting node must not equal end node");
             return Array.Empty<PFNode>();
         }
-        
-        
+
         ClearCache();
+        
         int step = 0;
         PFNode currentNode = start;
         minDistanceSum[nodeIndexes[start]] = 0f;
@@ -468,6 +495,9 @@ public class PFManager : MonoBehaviour
                 path.Add(start);
                 
                 path.Reverse();
+                
+                if(debug)
+                    DebugDijkstra(path);
 
                 return path.ToArray();
             }
