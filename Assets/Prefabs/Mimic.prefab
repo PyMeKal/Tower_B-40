@@ -99,11 +99,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f1f8cb7d4502634d97c9bbfa22e34ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numNodes: 0
-  smallNodeObj: {fileID: 3345541700139170738, guid: e6fe3b08f1f34f340ad2f28870a219d3, type: 3}
-  nodeObj: {fileID: 7598755919592299769, guid: c21c8d6e22e0aef419e422bb521ae87a, type: 3}
-  smallNodeChance: 0
-  nodeSpawnArea: 0
+  numLegs: 5
+  smallLegObj: {fileID: 7598755919592299769, guid: c21c8d6e22e0aef419e422bb521ae87a, type: 3}
+  legObj: {fileID: 3345541700139170738, guid: e6fe3b08f1f34f340ad2f28870a219d3, type: 3}
+  smallNodeChance: 0.3
+  nodeSpawnArea: 2
   state: 0
   destination: {x: 0, y: 0, z: 0}
   searchState:

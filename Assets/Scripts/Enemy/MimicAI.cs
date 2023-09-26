@@ -5,22 +5,45 @@ using System.Net;
 using UnityEditor;
 using UnityEngine;
 
-public class MimicNode
+public class MimicLeg
 {
-    public Vector3 pos;
-    public bool isSmall;
-    public Transform nodeTransform;
-    public MimicNode(Vector3 pos, bool isSmall, Transform nodeTransform)
+    public readonly bool isSmall;
+    public Transform transform;
+    public Transform bodyTransform;
+    public Vector3 Position => transform.position;
+    public Vector3 Direction => (Position - bodyTransform.position).normalized;
+    public bool connected = false;
+    public Vector3 target;
+    public readonly float speed;
+    public readonly float pullForce;
+    
+    public MimicLeg(bool isSmall, Transform transform, Transform bodyTransform, float speed, float pullForce)
     {
-        this.pos = pos;
         this.isSmall = isSmall;
-        this.nodeTransform = nodeTransform;
+        this.transform = transform;
+        this.bodyTransform = bodyTransform;
+        this.speed = speed;
+        this.pullForce = pullForce;
+    }
+
+    public void MoveToTargetPoint()
+    {
+        Vector3 moveVector = (target - transform.position).normalized * speed;
+        if ((target - Position).sqrMagnitude < moveVector.sqrMagnitude)
+            moveVector = target - Position;
+        transform.Translate(moveVector);
+    }
+    
+    public void Connect()
+    {
+        connected = true;
     }
 }
 
 public enum MimicState
 {
     Sleep,
+    Idle,
     Search,
     Chase,
     Flee,
@@ -35,9 +58,9 @@ public class MimicAI : MonoBehaviour
     private Transform playerTransform;
     
     [Header("Nodes")]
-    public List<MimicNode> nodes = new List<MimicNode>();
-    [SerializeField] private int numNodes;
-    [SerializeField] private GameObject smallNodeObj, nodeObj;
+    public List<MimicLeg> legs = new ();
+    [SerializeField] private int numLegs;
+    [SerializeField] private GameObject smallLegObj, legObj;
     [SerializeField][Range(0f, 1f)] private float smallNodeChance;
     [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float nodeSpawnArea;
 
@@ -47,11 +70,11 @@ public class MimicAI : MonoBehaviour
     public Vector3 destination;
     public Queue<Vector3> pathQueue;
 
-    void CreateNodes(int n)
+    void CreateLegs(int n)
     {
         for (int i = 0; i < n; i++)
         {
-            MimicNode thisNode;
+            MimicLeg thisNode;
             Vector3 pos = transform.position + new Vector3(Random.Range(-nodeSpawnArea, nodeSpawnArea), Random.Range(-nodeSpawnArea, nodeSpawnArea));
             if (Random.Range(0f, 1f) > smallNodeChance)
             {
@@ -59,8 +82,8 @@ public class MimicAI : MonoBehaviour
                 - Small max tension/push
                 - Small range
                 */
-                GameObject thisNodeObj = GameObject.Instantiate(smallNodeObj, pos, Quaternion.identity, transform);
-                thisNode = new MimicNode(pos, true, thisNodeObj.transform);
+                GameObject thisNodeObj = Instantiate(smallLegObj, pos, Quaternion.identity);
+                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 1f, 1f);
             }
             else
             {
@@ -68,17 +91,17 @@ public class MimicAI : MonoBehaviour
                 - Medium max tension/push
                 - Medium range
                 */
-                GameObject thisNodeObj = GameObject.Instantiate(nodeObj, pos, Quaternion.identity, transform);
-                thisNode = new MimicNode(pos, false, thisNodeObj.transform);
+                GameObject thisNodeObj = Instantiate(legObj, pos, Quaternion.identity);
+                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.5f, 2f);
             }
-            nodes.Add(thisNode);
+            legs.Add(thisNode);
         }
     }
 
     void WakeUp()
     {
         // Temporary..
-        state = MimicState.Search;
+        state = MimicState.Idle;
     }
 
     void Start()
@@ -86,7 +109,7 @@ public class MimicAI : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         pfManager = GM.GetPFManager();
         grid = new ("mimic", GM.GetGM().standardAStarTilemap);
-        CreateNodes(numNodes);
+        CreateLegs(numLegs);
         state = MimicState.Search;
         playerTransform = GM.GetPlayer().transform;
         pathQueue = new Queue<Vector3>();
@@ -103,6 +126,67 @@ public class MimicAI : MonoBehaviour
                 break;
         }
     }
+
+    void LegsBehaviour()
+    {
+        foreach (var leg in legs)
+        {
+            if (leg.connected)
+            {
+                // #1. Leg connected to surface
+                rb.AddForce(leg.Direction * leg.pullForce);
+                continue;
+            }
+            
+            // #2. Leg not connected to surface
+            leg.MoveToTargetPoint();
+            float connectionThreshold = 0.25f;  // for Vec3.sqrMagnitude
+            if (Vector3.SqrMagnitude(leg.target - leg.Position) < connectionThreshold)
+            {
+                leg.connected = true;
+            }
+        }
+    }
+
+    void SetLegTargets(Vector3 target)
+    {
+        Vector3 targetDirection = (target - transform.position).normalized;
+        Vector3 gravityForce = (rb.mass * rb.gravityScale * Physics2D.gravity);
+        Vector3 netForce = gravityForce;
+        legs.ForEach(leg => netForce += leg.connected ? (leg.Direction * leg.pullForce) : Vector3.zero);
+
+
+        Vector3 netForceDirDeviation = targetDirection - netForce.normalized;
+        
+        const float DIRECTION_THRESHOLD = 1f;
+        
+        if (Vector3.SqrMagnitude(netForceDirDeviation) < DIRECTION_THRESHOLD)
+        {
+            // #1. netForce somewhat leads to target
+            return;
+        }
+        
+        // #2. netForce leads away from target
+        MimicLeg leastOptimalLeg = legs[0];
+        foreach (var leg in legs)
+        {
+            if(!leg.connected) continue;
+            
+            float thisDirectionDeviation = (targetDirection - leg.Direction).sqrMagnitude;
+            float worstDirectionDeviation = (targetDirection - leastOptimalLeg.Direction).sqrMagnitude;
+            if (thisDirectionDeviation > worstDirectionDeviation)
+                leastOptimalLeg = leg;
+        }
+        
+        // Set new target for least optimal leg
+        float thetaInterval = 3.14f / 16f;
+        float theta = 0f;
+        
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, netForceDirDeviation)
+        
+        leastOptimalLeg.target = 
+    }
+    
 
     PFNode GetNearestNode(Vector3 position)
     {
