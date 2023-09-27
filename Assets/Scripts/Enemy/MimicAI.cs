@@ -2,16 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class MimicLeg
 {
     public readonly bool isSmall;
+    public bool disabled;
     public Transform transform;
     public Transform bodyTransform;
     public Vector3 Position => transform.position;
-    public Vector3 Direction => (Position - bodyTransform.position).normalized;
+    public Vector3 Direction => (target - bodyTransform.position).normalized;
     public bool connected = false;
     public Vector3 target;
     public readonly float speed;
@@ -63,6 +66,7 @@ public class MimicAI : MonoBehaviour
     [SerializeField] private GameObject smallLegObj, legObj;
     [SerializeField][Range(0f, 1f)] private float smallNodeChance;
     [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float nodeSpawnArea;
+    [SerializeField] private LayerMask wallLayers;
 
     [Header("\nAI")] 
     public PFGrid grid;
@@ -83,7 +87,7 @@ public class MimicAI : MonoBehaviour
                 - Small range
                 */
                 GameObject thisNodeObj = Instantiate(smallLegObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 1f, 1f);
+                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 0.5f, 1f);
             }
             else
             {
@@ -92,7 +96,7 @@ public class MimicAI : MonoBehaviour
                 - Medium range
                 */
                 GameObject thisNodeObj = Instantiate(legObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.5f, 2f);
+                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.25f, 2f);
             }
             legs.Add(thisNode);
         }
@@ -113,6 +117,7 @@ public class MimicAI : MonoBehaviour
         state = MimicState.Search;
         playerTransform = GM.GetPlayer().transform;
         pathQueue = new Queue<Vector3>();
+        SetLegTargetsStay();
     }
 
     void FixedUpdate()
@@ -121,20 +126,42 @@ public class MimicAI : MonoBehaviour
         {
             case MimicState.Sleep:
                 break;
+            case MimicState.Idle:
+                break;
             case MimicState.Search:
                 STATE_Search();
                 break;
         }
+        
+        LegsBehaviour();
     }
 
     void LegsBehaviour()
     {
         foreach (var leg in legs)
         {
+            if (leg.disabled)
+            {
+                // #0. Leg disabled
+                leg.target = transform.position;
+                leg.MoveToTargetPoint();
+                leg.connected = false;
+                
+                //leg.transform.GetComponent<SpriteRenderer>().sortingOrder =
+                //GetComponent<SpriteRenderer>().sortingOrder - 1;
+                
+                continue;
+            }
+            else
+            {
+                //leg.transform.GetComponent<SpriteRenderer>().sortingOrder =
+                    //GetComponent<SpriteRenderer>().sortingOrder + 1;
+            }
+            
             if (leg.connected)
             {
                 // #1. Leg connected to surface
-                rb.AddForce(leg.Direction * leg.pullForce);
+                rb.AddForce(leg.Direction * leg.pullForce + leg.Direction * (leg.pullForce * Vector3.Distance(transform.position, leg.Position)));
                 continue;
             }
             
@@ -148,7 +175,15 @@ public class MimicAI : MonoBehaviour
         }
     }
 
-    void SetLegTargets(Vector3 target)
+    /// <summary>
+    /// Resets the target of the least optimal leg
+    /// Return codes are as follows:
+    /// true: successful
+    /// false: failed
+    /// </summary>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    bool SetLegTargetsMove(Vector3 target)
     {
         Vector3 targetDirection = (target - transform.position).normalized;
         Vector3 gravityForce = (rb.mass * rb.gravityScale * Physics2D.gravity);
@@ -158,12 +193,12 @@ public class MimicAI : MonoBehaviour
 
         Vector3 netForceDirDeviation = targetDirection - netForce.normalized;
         
-        const float DIRECTION_THRESHOLD = 1f;
+        const float DIRECTION_THRESHOLD = 0.25f;
         
         if (Vector3.SqrMagnitude(netForceDirDeviation) < DIRECTION_THRESHOLD)
         {
             // #1. netForce somewhat leads to target
-            return;
+            // return true;
         }
         
         // #2. netForce leads away from target
@@ -179,14 +214,74 @@ public class MimicAI : MonoBehaviour
         }
         
         // Set new target for least optimal leg
-        float thetaInterval = 3.14f / 16f;
+        float thetaInterval = 3.14f / 32f;
         float theta = 0f;
-        
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, netForceDirDeviation)
-        
-        leastOptimalLeg.target = 
+        float thetaDir = 1f;
+
+        RaycastHit2D hit = new RaycastHit2D();
+
+        do
+        {
+            // (netForce + F).normalized = targetDirection
+            Vector3 newLegDir = targetDirection + netForceDirDeviation * 0.5f;
+
+            float newLegDirRad = Mathf.Atan2(newLegDir.y, newLegDir.x) + theta;
+            newLegDir.x = Mathf.Cos(newLegDirRad);
+            newLegDir.y = Mathf.Sin(newLegDirRad);
+            
+            hit = Physics2D.Raycast(transform.position, newLegDir, 10f, wallLayers);
+            theta = (Mathf.Abs(theta) + thetaInterval) * thetaDir;
+            thetaDir *= -1f;
+        } while (hit.collider == null && Mathf.Abs(theta) < Mathf.PI);
+
+        if (hit.collider == null)
+        {
+            // target point not found
+            return false;
+        }
+
+        leastOptimalLeg.target = hit.point;
+        leastOptimalLeg.connected = false;
+        return true;
     }
-    
+
+    void SetLegTargetsStay()
+    {
+        Vector3[] connectionPoints = new Vector3[numLegs];
+        float theta = 0f;
+        for (int i = 0; i < numLegs; i++)
+        {
+            float alphaInterval = 3.14f / 16f;
+            float alpha = 0f;
+            float alphaDir = 1f;
+
+            RaycastHit2D hit = new RaycastHit2D();
+
+            while (hit.collider == null && Mathf.Abs(alpha) < Mathf.PI * 2f)
+            {
+                Vector2 dir = new Vector2(Mathf.Cos(theta + alpha), Mathf.Sin(theta + alpha));
+                hit = Physics2D.Raycast(transform.position, dir, 10f, wallLayers);
+
+                alpha = (Mathf.Abs(alpha) + alphaInterval) * alphaDir;
+                alphaDir *= -1f;
+            }
+
+            if (hit.collider == null)
+            {
+                legs[i].disabled = true;
+                continue;
+            }
+
+            legs[i].target = hit.point;
+
+            theta += Mathf.PI * 2f / numLegs;
+        }
+    }
+
+    void MoveToTarget(Vector3 target)
+    {
+        
+    }
 
     PFNode GetNearestNode(Vector3 position)
     {
@@ -292,6 +387,9 @@ public class MimicAI : MonoBehaviour
         public float refreshPathClock;
         [HideInInspector] public float refreshPathClockTimer;
         [HideInInspector] public bool atDestination;
+
+        public float setLegTargetClock;
+        [HideInInspector] public float setLegTargetClockTimer;
     }
 
     [Header("Variables for State: Search")]
@@ -324,7 +422,15 @@ public class MimicAI : MonoBehaviour
         else
         {
             Vector3 direction = target - transform.position;
-            rb.velocity = direction.normalized * 4f; // Placeholder
+            // rb.velocity = direction.normalized * 4f; // Placeholder
+
+            if (searchState.setLegTargetClockTimer <= 0f)
+            {
+                searchState.setLegTargetClockTimer = searchState.setLegTargetClock;
+                SetLegTargetsMove(target);
+                SetLegTargetsMove(target);
+            }
+            
             if (direction.sqrMagnitude < 0.5f)
             {
                 pathQueue.Dequeue();
@@ -333,6 +439,7 @@ public class MimicAI : MonoBehaviour
         
         // Update searchState
         searchState.refreshPathClockTimer -= Time.fixedDeltaTime;
+        searchState.setLegTargetClockTimer -= Time.fixedDeltaTime;
 
     }
 }
