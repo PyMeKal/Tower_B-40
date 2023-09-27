@@ -212,13 +212,13 @@ public class PFGrid
 
         if (start == end)
         {
-            Debug.LogWarning("Start equals end");
+            // Debug.LogWarning("Start equals end");
             return Array.Empty<Vector3>();
         }
 
         if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
         {
-            Debug.LogWarning("Start or end not reachable");
+            // Debug.LogWarning("Start or end not reachable");
             return Array.Empty<Vector3>();
         }
             
@@ -429,7 +429,7 @@ public class PFManager : MonoBehaviour
         
         if (start == end)
         {
-            Debug.LogWarning("Starting node must not equal end node");
+            // Debug.LogWarning("Starting node must not equal end node");
             return Array.Empty<PFNode>();
         }
 

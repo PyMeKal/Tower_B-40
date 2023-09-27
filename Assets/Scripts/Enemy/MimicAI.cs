@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -31,15 +32,14 @@ public class MimicLeg
 
     public void MoveToTargetPoint()
     {
+        /*
         Vector3 moveVector = (target - transform.position).normalized * speed;
         if ((target - Position).sqrMagnitude < moveVector.sqrMagnitude)
             moveVector = target - Position;
         transform.Translate(moveVector);
-    }
-    
-    public void Connect()
-    {
-        connected = true;
+        */
+
+        transform.position = Vector3.Lerp(Position, target, speed);
     }
 }
 
@@ -59,13 +59,18 @@ public class MimicAI : MonoBehaviour
 
     private PFManager pfManager;
     private Transform playerTransform;
+
+    [Header("Head")]
+    public Transform head;
+    private SpriteRenderer headSprite;
+    [SerializeField] private Transform eye, pupil;
     
-    [Header("Nodes")]
+    [Header("Legs")]
     public List<MimicLeg> legs = new ();
     [SerializeField] private int numLegs;
     [SerializeField] private GameObject smallLegObj, legObj;
-    [SerializeField][Range(0f, 1f)] private float smallNodeChance;
-    [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float nodeSpawnArea;
+    [SerializeField][Range(0f, 1f)] private float smallLegChance;
+    [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float legSpawnArea;
     [SerializeField] private LayerMask wallLayers;
 
     [Header("\nAI")] 
@@ -79,15 +84,15 @@ public class MimicAI : MonoBehaviour
         for (int i = 0; i < n; i++)
         {
             MimicLeg thisNode;
-            Vector3 pos = transform.position + new Vector3(Random.Range(-nodeSpawnArea, nodeSpawnArea), Random.Range(-nodeSpawnArea, nodeSpawnArea));
-            if (Random.Range(0f, 1f) > smallNodeChance)
+            Vector3 pos = transform.position + new Vector3(Random.Range(-legSpawnArea, legSpawnArea), Random.Range(-legSpawnArea, legSpawnArea));
+            if (Random.Range(0f, 1f) < smallLegChance)
             {
                 /* Small Node
                 - Small max tension/push
                 - Small range
                 */
                 GameObject thisNodeObj = Instantiate(smallLegObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 0.5f, 1f);
+                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 0.25f, 1f);
             }
             else
             {
@@ -96,7 +101,7 @@ public class MimicAI : MonoBehaviour
                 - Medium range
                 */
                 GameObject thisNodeObj = Instantiate(legObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.25f, 2f);
+                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.05f, 2f);
             }
             legs.Add(thisNode);
         }
@@ -118,6 +123,8 @@ public class MimicAI : MonoBehaviour
         playerTransform = GM.GetPlayer().transform;
         pathQueue = new Queue<Vector3>();
         SetLegTargetsStay();
+        
+        headSprite = head.GetComponent<SpriteRenderer>();
     }
 
     void FixedUpdate()
@@ -133,7 +140,41 @@ public class MimicAI : MonoBehaviour
                 break;
         }
         
+        HeadBehaviour();
+        EyeBehaviour();
         LegsBehaviour();
+    }
+
+    void HeadBehaviour()
+    {
+        Vector3 headLookAt;
+        if (!pathQueue.TryPeek(out headLookAt))
+            headLookAt = destination;
+
+        headLookAt = Vector3.Lerp(playerTransform.position, headLookAt, 0.5f);
+
+        float neck = 0.75f, headSpeed = 0.05f;
+        Vector3 headTargetPos = (headLookAt - transform.position).normalized * neck;
+
+        head.localPosition = Vector3.Lerp(head.localPosition, headTargetPos, headSpeed);
+        
+        headSprite.flipX = !(headLookAt.x > head.position.x);
+    }
+
+    void EyeBehaviour()
+    {
+        // For eye + pupil
+        Vector3 distanceScale = new Vector3(0.1f, 0.2f);
+        Vector3 offset = new Vector3(0, 0);
+
+        Vector3 eyeLookAt = destination;
+        Vector3 eyeTargetPosRaw = (eyeLookAt - head.position).normalized;
+        
+        // Applied distanceScale & offset
+        Vector3 eyeTargetPos = new Vector3(eyeTargetPosRaw.x * distanceScale.x, eyeTargetPosRaw.y * distanceScale.y) + offset;
+
+        float eyeSpeed = 0.05f;
+        eye.localPosition = Vector3.Lerp(eye.localPosition, eyeTargetPos, eyeSpeed);
     }
 
     void LegsBehaviour()
@@ -167,7 +208,7 @@ public class MimicAI : MonoBehaviour
             
             // #2. Leg not connected to surface
             leg.MoveToTargetPoint();
-            float connectionThreshold = 0.25f;  // for Vec3.sqrMagnitude
+            float connectionThreshold = 0.1f;  // for Vec3.sqrMagnitude
             if (Vector3.SqrMagnitude(leg.target - leg.Position) < connectionThreshold)
             {
                 leg.connected = true;
@@ -276,11 +317,6 @@ public class MimicAI : MonoBehaviour
 
             theta += Mathf.PI * 2f / numLegs;
         }
-    }
-
-    void MoveToTarget(Vector3 target)
-    {
-        
     }
 
     PFNode GetNearestNode(Vector3 position)
@@ -416,7 +452,7 @@ public class MimicAI : MonoBehaviour
         // #1. Destination reached (path queue empty)
         if (searchState.atDestination)
         {
-            print("Destination Reached");
+            // print("Destination Reached");
         }
         // #2. Destination not reached
         else
@@ -427,7 +463,6 @@ public class MimicAI : MonoBehaviour
             if (searchState.setLegTargetClockTimer <= 0f)
             {
                 searchState.setLegTargetClockTimer = searchState.setLegTargetClock;
-                SetLegTargetsMove(target);
                 SetLegTargetsMove(target);
             }
             
