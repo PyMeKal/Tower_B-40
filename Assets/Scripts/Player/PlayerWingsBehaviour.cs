@@ -47,8 +47,8 @@ public class PlayerWing
 
         position = idlePosition;
         objectTransform.position = Vector3.zero;
-        
 
+        mesh = new Mesh();
         meshFilter = objectTransform.GetComponent<MeshFilter>();
         meshRenderer = objectTransform.GetComponent<MeshRenderer>();
         vertices = new List<Vector3>();
@@ -80,6 +80,7 @@ public class PlayerWing
     {
         var position1 = playerTransform.position;
         var idleWorldPos = idlePosition + position1;
+        position = idleWorldPos;
 
         Vector3[] vertexTargets = new[]
         {
@@ -112,7 +113,6 @@ public class PlayerWing
         Vector3 pos2A = ((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
         Vector3 pos2B = -((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
         
-        mesh = new Mesh();
         mesh.vertices = new Vector3[]
         {
             pos1,
