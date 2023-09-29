@@ -17,6 +17,7 @@ public class PFNodeInterface : MonoBehaviour
     public PFNode node = new PFNode();
     public int index;
     public List<Transform> adjacentNodeTransforms;
+    public bool drawDebugLines;
     
     // Start is called before the first frame update
     void Start()
@@ -27,6 +28,9 @@ public class PFNodeInterface : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!drawDebugLines)
+            return;
+        
         Handles.Label(transform.position, index.ToString());
         foreach (var t in adjacentNodeTransforms)
         {

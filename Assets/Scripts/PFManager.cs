@@ -349,7 +349,7 @@ public class PFManager : MonoBehaviour
     public float[,] distanceMatrix;  // Stores distances between PFNodes
     public int nodeCount;
 
-    public Tilemap aStarTilemap;
+    // public Tilemap aStarTilemap;
 
     void ClearCache()
     {
@@ -534,8 +534,9 @@ public class PFManager : MonoBehaviour
         }
     }
 
-    private PFGrid grid;
-    private Vector3[] path = Array.Empty<Vector3>();
+    // private PFGrid grid;
+    // private Vector3[] path = Array.Empty<Vector3>();
+    /*
     void DebugAStar()
     {
         Vector3 start = Vector3.zero;
@@ -546,23 +547,26 @@ public class PFManager : MonoBehaviour
             path = grid.GetAStarPath(start, end, wCost:10, preventCornerCutting:true);
         }
     }
+    */
     
     private void Start()
     {
         SetupNodes();
 
-        grid = new PFGrid("x0.5", aStarTilemap);
-        
+        // Debug
+        // grid = new PFGrid("x0.5", aStarTilemap);
     }
     
-    private void Update()
-    {
-        DebugPF();
-        
-        /*DebugAStar();
-        for (int i = 1; i < path.Length; i++)
-        {
-            Debug.DrawLine(path[i-1], path[i]);
-        }*/
-    }
+    //
+    // private void Update()
+    // {
+    //     DebugPF();
+    //     
+    //     /*DebugAStar();
+    //     for (int i = 1; i < path.Length; i++)
+    //     {
+    //         Debug.DrawLine(path[i-1], path[i]);
+    //     }*/
+    // }
+    
 }

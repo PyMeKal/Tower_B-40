@@ -11,6 +11,8 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask groundLayers;
     [SerializeField] private Transform feetPosition;
 
+    [HideInInspector] public bool facingRight;
+
     public Transform spritesTransform;
     private Rigidbody2D rb;
 
@@ -111,11 +113,13 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetAxisRaw("Horizontal") > 0)
         {
             spritesTransform.localEulerAngles = new Vector3(0, 0, 0);
+            facingRight = true;
         }
 
         if (Input.GetAxisRaw("Horizontal") < 0)
         {
             spritesTransform.localEulerAngles = new Vector3(0, 180f, 0);
+            facingRight = false;
         }
     }
 
