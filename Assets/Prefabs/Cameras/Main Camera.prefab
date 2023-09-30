@@ -64,14 +64,14 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.055555556
+    y: 0
     width: 1
-    height: 0.8888889
+    height: 1
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 8
+  orthographic size: 11.25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -84,7 +84,7 @@ Camera:
   m_AllowMSAA: 1
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
+  m_OcclusionCulling: 0
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
 --- !u!81 &638549561905206429
@@ -154,7 +154,7 @@ MonoBehaviour:
   target: {fileID: 0}
   speed: 0.4
   offset: {x: 0, y: 0, z: -10}
-  sightDistanceCoeff: 0.25
+  sightDistanceCoeff: 0.1
 --- !u!114 &4020569210994230374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,7 +171,7 @@ MonoBehaviour:
   m_AssetsPPU: 16
   m_RefResolutionX: 512
   m_RefResolutionY: 256
-  m_CropFrame: 4
+  m_CropFrame: 0
   m_GridSnapping: 1
   m_FilterMode: 1
   m_UpscaleRT: 0
