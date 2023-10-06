@@ -1820,6 +1820,56 @@ Tilemap:
       m_TileObjectToInstantiateIndex: 65535
       dummyAlignment: 0
       m_AllTileFlags: 1073741825
+  - first: {x: 7, y: 2, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 0
+      m_TileSpriteIndex: 0
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
+  - first: {x: 8, y: 2, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 0
+      m_TileSpriteIndex: 0
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
+  - first: {x: 9, y: 2, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 0
+      m_TileSpriteIndex: 0
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
+  - first: {x: 10, y: 2, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 0
+      m_TileSpriteIndex: 0
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
+  - first: {x: 11, y: 2, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 0
+      m_TileSpriteIndex: 0
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
   - first: {x: 23, y: 2, z: 0}
     second:
       serializedVersion: 2
@@ -2222,15 +2272,15 @@ Tilemap:
       m_AllTileFlags: 1073741825
   m_AnimatedTiles: {}
   m_TileAssetArray:
-  - m_RefCount: 137
+  - m_RefCount: 142
     m_Data: {fileID: 11400000, guid: e6e199efe0dfd894991b10e4cd8c7689, type: 2}
   - m_RefCount: 0
     m_Data: {fileID: 0}
   m_TileSpriteArray:
-  - m_RefCount: 137
+  - m_RefCount: 142
     m_Data: {fileID: 7482667652216324306, guid: d54c80e8177f36546859297720d2710d, type: 3}
   m_TileMatrixArray:
-  - m_RefCount: 137
+  - m_RefCount: 142
     m_Data:
       e00: 1
       e01: 0
@@ -2249,7 +2299,7 @@ Tilemap:
       e32: 0
       e33: 1
   m_TileColorArray:
-  - m_RefCount: 137
+  - m_RefCount: 142
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
@@ -2537,7 +2587,7 @@ PrefabInstance:
     - target: {fileID: 5208595405188619261, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
       propertyPath: standardAStarTilemap
       value: 
-      objectReference: {fileID: 689723265}
+      objectReference: {fileID: 1392789035}
     - target: {fileID: 7281170357888884027, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
       propertyPath: nodesFolderTransform
       value: 
@@ -14758,7 +14808,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2311074748414079071, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5109401839988099730, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14835,11 +14885,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7983485318731979173, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 9.12
+      value: 9.18
       objectReference: {fileID: 0}
     - target: {fileID: 7983485318731979173, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.77
+      value: 0.49
       objectReference: {fileID: 0}
     - target: {fileID: 7983485318731979173, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: m_LocalPosition.z
@@ -14963,6 +15013,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4020569210994230374, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4515855163236867301, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_Name
       value: Main Camera
