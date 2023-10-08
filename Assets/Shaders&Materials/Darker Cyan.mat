@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Circuit Eyes
+  m_Name: Darker Cyan
   m_Shader: {fileID: -6465566751694194690, guid: 295f4d67e09febe49b3b412b47a91c22, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -42,7 +42,7 @@ Material:
     m_Ints: []
     m_Floats: []
     m_Colors:
-    - _Color: {r: 0, g: 349.36472, b: 766.9961, a: 0}
+    - _Color: {r: 0, g: 1.3647059, b: 2.9960785, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &9191508210079111778
 MonoBehaviour:

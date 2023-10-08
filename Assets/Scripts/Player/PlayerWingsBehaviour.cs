@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.U2D;
-
+using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class PlayerWing
@@ -21,8 +21,11 @@ public class PlayerWing
     public Material material;
     public Vector3 position;
     public Vector3 idlePosition;
+    private Vector3 offsetIdlePosition;
+    private Vector3 offsetIdleVelocity;
     public Vector3 targetPosition;
     private Transform playerTransform;
+    private PlayerMovement playerMovement;
     private Rigidbody2D playerRb;
     public float speed;
     public float range;
@@ -48,8 +51,10 @@ public class PlayerWing
         this.travelDistanceCoeff = travelDistanceCoeff;
         playerTransform = GM.GetPlayer().transform;
         playerRb = playerTransform.GetComponent<Rigidbody2D>();
+        playerMovement = playerTransform.GetComponent<PlayerMovement>();
 
         position = idlePosition;
+        offsetIdlePosition = idlePosition;
 
         mesh = new Mesh();
         meshFilter = meshObject.GetComponent<MeshFilter>();
@@ -77,27 +82,55 @@ public class PlayerWing
         vertices.RemoveAt(0);
         vertices.Add(position);
     }
-
+    
     public void Idle()
     {
-        Vector3 playerDS = playerRb.velocity * Time.fixedDeltaTime;
-        var idleWorldPos = idlePosition;
-        position = idleWorldPos;
+        int xMultiplier = playerMovement.facingRight ? 1 : -1;
 
-        Vector3[] vertexTargets = new[]
+        float offsetAccelerationRange = 0.0005f;
+        var offsetAcceleration =
+            new Vector3(Random.Range(-offsetAccelerationRange, offsetAccelerationRange),
+                        Random.Range(-offsetAccelerationRange, offsetAccelerationRange));
+
+        var d = idlePosition - offsetIdlePosition;
+        var wingPullAccel = d.normalized * (d.sqrMagnitude * 0.05f);
+        offsetAcceleration += wingPullAccel;
+        
+        offsetIdleVelocity += offsetAcceleration;
+        
+        // Damping
+        float maxOffsetVelocity = 0.2f * Time.fixedDeltaTime;
+        offsetIdleVelocity = offsetIdleVelocity.sqrMagnitude > maxOffsetVelocity * maxOffsetVelocity
+            ? offsetIdleVelocity.normalized * maxOffsetVelocity
+            : offsetIdleVelocity;
+        
+        offsetIdlePosition += offsetIdleVelocity;
+
+        float offsetMaxDist = 0.5f;
+        if (Vector3.SqrMagnitude(idlePosition - offsetIdlePosition) > offsetMaxDist * offsetMaxDist)
+            offsetIdlePosition = idlePosition + (offsetIdlePosition - idlePosition).normalized * offsetMaxDist;
+        
+        var correctIdlePosition = offsetIdlePosition;
+        correctIdlePosition.x *= xMultiplier;  // "correct" as in corrected for facing right or left
+        position = correctIdlePosition;
+        
+        Vector3[] vertexTargets =
         {
-            idleWorldPos,
-            idleWorldPos + new Vector3(-0.1f, 0.2f, 0f),
-            idleWorldPos + new Vector3(-0.3f, 0.5f, 0f),
+            position,
+            position + new Vector3(-0.1f * xMultiplier, 0.2f, 0f),
+            position + new Vector3(-0.3f * xMultiplier, 0.5f, 0f),
         };
 
-        float[] vertexSpeeds = new[]
+        float[] vertexSpeeds =
         {
             speed,
             speed * 0.75f,
             speed * 0.5f,
         };
-
+        
+        // I know this is stupid code but this line is essential for smoothly following the player
+        Vector3 playerDS = playerRb.velocity * Time.fixedDeltaTime;
+        
         for (int i = 0; i < 3; i++)
         {
             vertices[i] -= playerDS;
@@ -105,7 +138,7 @@ public class PlayerWing
         }
     }
 
-    public void DrawWingMeshMove()
+    public void DrawMesh()
     {
         Vector3 pos1, pos2, pos3;
         float width = 0.1f;
@@ -138,19 +171,19 @@ public class PlayerWing
 
 public class PlayerWingsBehaviour : MonoBehaviour
 {
-    public GameObject meshObject;
-    
-    public Transform wing1Transform;  // In front of player
-    public Transform wing2Transform;  // Behind player
+    public GameObject wing1meshObject, wing2meshObject;
 
     public PlayerWing wing1, wing2;
 
     public Material wing1Material, wing2Material;
 
+    public Vector3 wing1Offset = new Vector3(-0.5f, 0.5f);
+    public Vector3 wing2Offset = new Vector3(-0.25f, 0.5f);
+    
     void Start()
     {
-        Vector3 wing1Offset = new Vector3(-0.5f, 0.5f);
-        wing1 = new PlayerWing(1, meshObject, wing1Material, wing1Offset, 0.5f, 7f, 0.75f);
+        wing1 = new PlayerWing(1, wing1meshObject, wing1Material, wing1Offset, 0.5f, 7f, 0.75f);
+        wing2 = new PlayerWing(1, wing2meshObject, wing2Material, wing2Offset, 0.5f, 7f, 0.75f);
     }
     
     private void FixedUpdate()
@@ -164,20 +197,25 @@ public class PlayerWingsBehaviour : MonoBehaviour
                 wing1.FollowMouse();
                 break;
         }
+        
+        switch (wing2.state)
+        {
+            case PlayerWing.PlayerWingState.idle:
+                wing2.Idle();
+                break;
+            case PlayerWing.PlayerWingState.followMouse:
+                wing2.FollowMouse();
+                break;
+        }
     }
 
     private void Update()
     {
-        if (Input.GetMouseButton(0))
-        {
-            wing1.state = PlayerWing.PlayerWingState.followMouse;
-        }
-        else
-        {
-            wing1.state = PlayerWing.PlayerWingState.idle;
-        }
+        wing1.state = Input.GetMouseButton(0) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
+        wing2.state = Input.GetMouseButton(1) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
         
         
-        wing1.DrawWingMeshMove();
+        wing1.DrawMesh();
+        wing2.DrawMesh();;
     }
 }
