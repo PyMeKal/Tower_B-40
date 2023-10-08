@@ -52,5 +52,7 @@
         "temp/":true,
         "Temp/":true
     },
-    "dotnet.defaultSolution": "Tower_B-40.sln"
+    "dotnet.defaultSolution": "Tower_B-40.sln",
+    "dotnet.preferCSharpExtension": true,
+    "FSharp.suggestGitignore": false
 }
