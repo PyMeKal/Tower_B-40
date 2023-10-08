@@ -94,14 +94,14 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void Jump()
+    public void Jump()
     {
         bool onGround = !(Physics2D.OverlapCircle(feetPosition.position, 0.5f, groundLayers) == null);
         RequestAnimation<bool>("On_Ground", onGround);
 
         if (Input.GetKeyDown(KeyCode.W) && onGround)
         {
-            //print("Jump");
+            print("Jump");
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
             RequestAnimation<string>("Jump", string.Empty);
         }
