@@ -101,11 +101,21 @@ public class PlayerMovement : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.W) && onGround)
         {
-            print("Jump");
+            //print("Jump");
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
             RequestAnimation<string>("Jump", string.Empty);
         }
 
+    }
+
+    // jump without using w key
+    public void Free_Jump(){
+        bool onGround = !(Physics2D.OverlapCircle(feetPosition.position, 0.5f, groundLayers) == null);
+
+        if (onGround){
+            rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+            RequestAnimation<string>("Jump", string.Empty);
+        }
     }
 
     void FlipSpritesByMovement()
