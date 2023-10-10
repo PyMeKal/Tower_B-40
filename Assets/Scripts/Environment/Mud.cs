@@ -5,21 +5,28 @@ using System.Collections.Generic;
 using UnityEngine;
 public class Mud : MonoBehaviour
 {
-    public GameObject player;
-    public float coeff_speed; // coeff that shows how slow 
-    public float coeff_accel;
+    private PlayerMovement playerMovement;
+    public float coeffSpeed;  // coeff that shows how slow 
+    public float coeffAccel;  // Changed from snake_case to camelCase (C# naming convention)
 
+    void Start()
+    {
+        playerMovement = GM.GetPlayer().GetComponent<PlayerMovement>();
+    }
+    
     private void OnCollisionEnter2D(Collision2D other) {
+        print("Mud");
         if (other.gameObject.name == "Player"){
-            player.GetComponent<PlayerMovement>().walkSpeed /= coeff_speed;
-            player.GetComponent<PlayerMovement>().moveAccel /= coeff_accel;
+            playerMovement.walkSpeed *= coeffSpeed;  // Switched coeff to apply multiplied speed on mud contact 
+            playerMovement.moveAccel *= coeffAccel;
         }
     }
 
     private void OnCollisionExit2D(Collision2D other) {
+        print("exit");
         if (other.gameObject.name == "Player"){
-            player.GetComponent<PlayerMovement>().walkSpeed *= coeff_speed;
-            player.GetComponent<PlayerMovement>().moveAccel *= coeff_accel;
+            playerMovement.walkSpeed /= coeffSpeed;  // revertss
+            playerMovement.moveAccel /= coeffAccel;
         }
     }
 }
