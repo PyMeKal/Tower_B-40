@@ -61,8 +61,8 @@ public class MimicAI : MonoBehaviour
     private Transform playerTransform;
 
     [Header("Head")]
-    public Transform head;
-    private SpriteRenderer headSprite;
+    [SerializeField] private Transform head;
+    [SerializeField] private SpriteRenderer headSprite;
     [SerializeField] private Transform eye, pupil;
     
     [Header("Legs")]
@@ -124,7 +124,7 @@ public class MimicAI : MonoBehaviour
         pathQueue = new Queue<Vector3>();
         SetLegTargetsStay();
         
-        headSprite = head.GetComponent<SpriteRenderer>();
+        // headSprite = head.GetComponent<SpriteRenderer>();
     }
 
     void FixedUpdate()

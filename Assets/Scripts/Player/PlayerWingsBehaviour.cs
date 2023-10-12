@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.U2D;
@@ -36,6 +37,7 @@ public class PlayerWing
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private List<Vector3> vertices;
+    private List<Vector3> positionHistory;
 
     public PlayerWing(int id, GameObject meshObject, Material material, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff)
     {
@@ -53,6 +55,8 @@ public class PlayerWing
         playerRb = playerTransform.GetComponent<Rigidbody2D>();
         playerMovement = playerTransform.GetComponent<PlayerMovement>();
 
+        positionHistory = new List<Vector3>(60);
+        
         position = idlePosition;
         offsetIdlePosition = idlePosition;
 
@@ -78,6 +82,21 @@ public class PlayerWing
         {
             position = position.normalized * range;
         }
+
+        int historyCap = positionHistory.Capacity;
+        if(positionHistory.Count == historyCap)
+            positionHistory.RemoveAt(0);
+        positionHistory.Add(position);
+        Vector3 generalDirection = new Vector3();
+        int count = positionHistory.Count;
+        if(count < historyCap)
+        {
+            // Continue Here!!!
+        }
+        
+        vertices[0] = position;
+        
+        
         
         vertices.RemoveAt(0);
         vertices.Add(position);
