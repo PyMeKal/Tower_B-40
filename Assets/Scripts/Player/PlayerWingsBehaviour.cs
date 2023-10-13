@@ -83,6 +83,7 @@ public class PlayerWing
             position = position.normalized * range;
         }
 
+        /*
         int historyCap = positionHistory.Capacity;
         if(positionHistory.Count == historyCap)
             positionHistory.RemoveAt(0);
@@ -95,7 +96,7 @@ public class PlayerWing
         }
         
         vertices[0] = position;
-        
+        */
         
         
         vertices.RemoveAt(0);
