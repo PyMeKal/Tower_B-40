@@ -2,13 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Mathematics;
-using Unity.VisualScripting;
-using Unity.VisualScripting.FullSerializer;
-using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using Random = UnityEngine.Random;
 
 public class PFGrid
 {
@@ -112,40 +107,6 @@ public class PFGrid
             }
         }
     }
-
-    /*
-    private Vector3Int[] GetNeighbourTiles(Vector3Int pos)
-    {
-        // Ripped from my GOL code in python
-        // Simple algorithm wise
-        // Honestly quite shit performance wise with the list creation overhead
-        
-        List<Vector3Int> neighbours = new List<Vector3Int>();
-        List<int> checkX = new List<int>(3) { -1, 0, 1 };
-        List<int> checkY = new List<int>(3) { -1, 0, 1 };
-
-        if (pos.x == 0)
-            checkX.Remove(-1);
-        if (pos.x == sizeX - 1)
-            checkX.Remove(1);
-        if (pos.y == 0)
-            checkY.Remove(-1);
-        if (pos.y == sizeY - 1)
-            checkY.Remove(1);
-
-        foreach (int deltaX in checkX)
-        {
-            foreach (var deltaY in checkY)
-            {
-                if(deltaX == 0 && deltaY == 0)
-                    continue;
-                
-                neighbours.Add(pos + new Vector3Int(deltaX, deltaY));
-            }
-        }
-
-        return neighbours.ToArray();
-    }*/
     
     private Vector3Int[] GetNeighbourTiles(Vector3Int pos)
     {
@@ -335,21 +296,28 @@ public class PFGrid
     }
 }
 
-public class PFManager : MonoBehaviour
-{
-    // Using Dijkstra's algorithm for graph based pathfinding across longer distances
-    
-    [SerializeField] private Transform nodesFolderTransform;
-    public PFNode[] nodes;  // Determines PFNode index
-    public bool ensureEdgeLinks;  // Checks if adjacent vertices both have each other in their respective adjacentNodes array 
-    private Dictionary<PFNode, int> nodeIndexes;
-    private int[] prevNodeIndexes;  // Previous PFNode the search algorithm came from (Dijkstra's)
-    private float[] minDistanceSum;  // Shortest distance found so far for each vertex
-    private bool[] nodeChecked;  // True if node has been checked
-    public float[,] distanceMatrix;  // Stores distances between PFNodes
-    public int nodeCount;
+//--------------------------------------------------------------------------------------------------------------------
 
-    // public Tilemap aStarTilemap;
+public class PFGraph
+{
+    [SerializeField] private Transform graphTransform;
+    public PFNode[] nodes;              // Determines PFNode index
+    [SerializeField] private bool ensureEdgeLinks;        // Checks if adjacent vertices both have each other in their respective adjacentNodes array 
+    private Dictionary<PFNode, int> nodeIndexes;
+    private int[] prevNodeIndexes;      // Previous PFNode the search algorithm came from (Dijkstra's)
+    private float[] minDistanceSum;     // Shortest distance found so far for each vertex
+    private bool[] nodeChecked;         // True if node has been checked
+    private float[,] distanceMatrix;    // Stores distances between PFNodes
+    private int nodeCount;
+
+    public PFGraph(Transform graphTransform, bool ensureEdgeLinks = default)
+    {
+        this.graphTransform = graphTransform;
+        this.ensureEdgeLinks = ensureEdgeLinks;
+        nodeCount = graphTransform.childCount;
+        nodes = new PFNode[nodeCount];
+        SetupNodes();
+    }
 
     void ClearCache()
     {
@@ -366,8 +334,6 @@ public class PFManager : MonoBehaviour
     
     void SetupNodes()
     {
-        nodeCount = nodesFolderTransform.childCount;
-        nodes = new PFNode[nodeCount];
         nodeIndexes = new Dictionary<PFNode, int>();
         distanceMatrix = new float[nodeCount, nodeCount];
 
@@ -376,7 +342,7 @@ public class PFManager : MonoBehaviour
         // #1 Setup nodes array
         for (int i = 0; i < nodeCount; i++)
         {
-            Transform nodeTransform = nodesFolderTransform.GetChild(i);
+            Transform nodeTransform = graphTransform.GetChild(i);
             PFNodeInterface nodeInterface = nodeTransform.GetComponent<PFNodeInterface>();
             nodes[i] = nodeInterface.node;
             nodeInterface.index = i;
@@ -415,15 +381,15 @@ public class PFManager : MonoBehaviour
         {
             for (int i = 0; i < nodeCount; i++)
             {
-                nodesFolderTransform.GetChild(i).GetComponent<SpriteRenderer>().color = Color.grey;
+                graphTransform.GetChild(i).GetComponent<SpriteRenderer>().color = Color.grey;
             }
             
             foreach (var node in path)
             {
-                nodesFolderTransform.GetChild(nodeIndexes[node]).GetComponent<SpriteRenderer>().color = Color.blue;
+                graphTransform.GetChild(nodeIndexes[node]).GetComponent<SpriteRenderer>().color = Color.blue;
             }
-            nodesFolderTransform.GetChild(nodeIndexes[start]).GetComponent<SpriteRenderer>().color = Color.green;
-            nodesFolderTransform.GetChild(nodeIndexes[end]).GetComponent<SpriteRenderer>().color = Color.red;
+            graphTransform.GetChild(nodeIndexes[start]).GetComponent<SpriteRenderer>().color = Color.green;
+            graphTransform.GetChild(nodeIndexes[end]).GetComponent<SpriteRenderer>().color = Color.red;
             
         }
         
@@ -450,8 +416,6 @@ public class PFManager : MonoBehaviour
                 // # 1. Update MDS for this adjacent node
                 // What the [fuck] [kind [of code] is this]
                 int adjacentNodeIndex = nodeIndexes[adjacentNode];
-                
-                if(adjacentNodeIndex == currentNodeIndex) print("What the fuck");
                 
                 if(nodeChecked[adjacentNodeIndex]) continue;
                 
@@ -508,65 +472,17 @@ public class PFManager : MonoBehaviour
         Debug.Log(start.position + " -> " + end.position);
         return Array.Empty<PFNode>();
     }
+}
 
-    void DebugPF()
-    {
-        // Literally used for debugging.
-        // If this works first try I will shit my pants
+//--------------------------------------------------------------------------------------------------------------------
 
-        PFNode start = nodes[Random.Range(0, nodeCount-1)];
-        PFNode end = nodes[Random.Range(0, nodeCount-1)];
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            for (int i = 0; i < nodeCount; i++)
-            {
-                nodesFolderTransform.GetChild(i).GetComponent<SpriteRenderer>().color = Color.grey;
-            }
-            
-            
-            PFNode[] path = GetDijkstraPath(start, end, 9999);
-            foreach (PFNode node in path)
-            {
-                print(node.position);
-                nodesFolderTransform.GetChild(nodeIndexes[node]).GetComponent<SpriteRenderer>().color = Color.green;
-            }    
-        }
-    }
-
-    // private PFGrid grid;
-    // private Vector3[] path = Array.Empty<Vector3>();
-    /*
-    void DebugAStar()
-    {
-        Vector3 start = Vector3.zero;
-        Vector3 end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-        {
-            path = grid.GetAStarPath(start, end, wCost:10, preventCornerCutting:true);
-        }
-    }
-    */
+public class PFManager : MonoBehaviour
+{
+    public PFGraph pfGraph;
+    public Transform graphTransform;
     
     private void Start()
     {
-        SetupNodes();
-
-        // Debug
-        // grid = new PFGrid("x0.5", aStarTilemap);
+        pfGraph = new PFGraph(graphTransform, true);
     }
-    
-    //
-    // private void Update()
-    // {
-    //     DebugPF();
-    //     
-    //     /*DebugAStar();
-    //     for (int i = 1; i < path.Length; i++)
-    //     {
-    //         Debug.DrawLine(path[i-1], path[i]);
-    //     }*/
-    // }
-    
 }

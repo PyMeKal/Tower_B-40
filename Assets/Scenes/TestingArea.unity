@@ -2550,6 +2550,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pixelsPerUnit: 16
+  useVelocityCeil: 1
+  velocityCeil: 1
 --- !u!1001 &922307941
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2607,9 +2609,21 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1392789035}
     - target: {fileID: 7281170357888884027, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
+      propertyPath: graphTransform
+      value: 
+      objectReference: {fileID: 671930968}
+    - target: {fileID: 7281170357888884027, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
       propertyPath: nodesFolderTransform
       value: 
       objectReference: {fileID: 671930968}
+    - target: {fileID: 7281170357888884027, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
+      propertyPath: pfGraph.graphTransform
+      value: 
+      objectReference: {fileID: 671930968}
+    - target: {fileID: 7281170357888884027, guid: 3fd62e5868625334ea58b98edb5186a1, type: 3}
+      propertyPath: pfGraph.ensureEdgeLinks
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

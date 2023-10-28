@@ -321,7 +321,7 @@ public class MimicAI : MonoBehaviour
 
     PFNode GetNearestNode(Vector3 position)
     {
-        PFNode[] nodes = pfManager.nodes;
+        PFNode[] nodes = pfManager.pfGraph.nodes;
         PFNode nearestNode = nodes[0];
         float nearestNodeDistSqr = Mathf.Infinity;
         for(int i = 0; i < nodes.Length; i++)
@@ -351,7 +351,7 @@ public class MimicAI : MonoBehaviour
         {
             // #1. start node != end node
             Vector2[] nodePath = 
-                pfManager.GetDijkstraPath(nearestNode, nearestDestinationNode, debug:true).Select(node => node.position).ToArray();
+                pfManager.pfGraph.GetDijkstraPath(nearestNode, nearestDestinationNode, debug:true).Select(node => node.position).ToArray();
 
             if (Vector3.Distance(nodePath[0], nodePath[1]) >
                 Vector3.Distance(transform.position, nodePath[1]))

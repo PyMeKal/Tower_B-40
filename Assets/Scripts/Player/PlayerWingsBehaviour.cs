@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
@@ -55,7 +56,10 @@ public class PlayerWing
         playerRb = playerTransform.GetComponent<Rigidbody2D>();
         playerMovement = playerTransform.GetComponent<PlayerMovement>();
 
+        var cap = 60;
         positionHistory = new List<Vector3>(60);
+        for (int i = 0; i < cap; i++)
+            positionHistory.Add(position);
         
         position = idlePosition;
         offsetIdlePosition = idlePosition;
@@ -83,24 +87,24 @@ public class PlayerWing
             position = position.normalized * range;
         }
 
-        /*
-        int historyCap = positionHistory.Capacity;
-        if(positionHistory.Count == historyCap)
-            positionHistory.RemoveAt(0);
+
+        positionHistory.RemoveAt(0);
         positionHistory.Add(position);
-        Vector3 generalDirection = new Vector3();
-        int count = positionHistory.Count;
-        if(count < historyCap)
-        {
-            // Continue Here!!!
-        }
+
+        float minLength1 = 0.05f, minLength2 = 0.075f;
+        int delay1 = 1, delay2 = 4; 
         
         vertices[0] = position;
-        */
+        vertices[1] = (
+            positionHistory[^delay1] // Index-from-end operation???
+            + (mousePosition - position).normalized * -minLength1
+            );
+        vertices[2] = (
+            positionHistory[^delay2] 
+            + (mousePosition - position).normalized * -minLength1
+        );
+
         
-        
-        vertices.RemoveAt(0);
-        vertices.Add(position);
     }
     
     public void Idle()
