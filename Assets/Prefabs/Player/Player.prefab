@@ -125,8 +125,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.057174385}
-  m_Size: {x: 0.55819774, y: 1.6341163}
+  m_Offset: {x: 0, y: -0.05}
+  m_Size: {x: 0.55819774, y: 1.65}
   m_Direction: 0
 --- !u!50 &7453817405451074959
 Rigidbody2D:
@@ -223,6 +223,7 @@ GameObject:
   - component: {fileID: 1522854445328263344}
   - component: {fileID: 1628537858267366252}
   - component: {fileID: 5064435688746164988}
+  - component: {fileID: 181407536153147070}
   m_Layer: 11
   m_Name: Sprite
   m_TagString: Untagged
@@ -318,6 +319,21 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &181407536153147070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4939335412662515802}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe899c5a1bea33f4799486eded717649, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pixelsPerUnit: 16
+  useVelocityCeil: 1
+  velocityCeil: 1
 --- !u!1 &7969597770623521286
 GameObject:
   m_ObjectHideFlags: 0

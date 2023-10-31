@@ -38,7 +38,12 @@ public class PlayerWing
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private List<Vector3> vertices;
-    private List<Vector3> positionHistory;
+    
+    private List<Vector3> positionHistory, directionHistory;
+    // Why do we keep position & direction history?
+    // => Draw wings based on movement => must perform calculations based on time => must keep history
+
+    private Vector3 mousePosition;
 
     public PlayerWing(int id, GameObject meshObject, Material material, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff)
     {
@@ -57,9 +62,13 @@ public class PlayerWing
         playerMovement = playerTransform.GetComponent<PlayerMovement>();
 
         var cap = 60;
-        positionHistory = new List<Vector3>(60);
+        positionHistory = new List<Vector3>(cap);
+        directionHistory = new List<Vector3>(cap);
         for (int i = 0; i < cap; i++)
+        {
             positionHistory.Add(position);
+            directionHistory.Add(Vector3.right);
+        }
         
         position = idlePosition;
         offsetIdlePosition = idlePosition;
@@ -78,32 +87,33 @@ public class PlayerWing
 
     public void FollowMouse()
     {
-        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        
         targetPosition = Vector3.Lerp(Vector3.zero, mousePosition - playerTransform.position, travelDistanceCoeff);
         position = Vector3.Lerp(position, targetPosition, speed);
 
-        if (Vector3.SqrMagnitude(playerTransform.position - position) > range * range)
+        if (Vector3.SqrMagnitude(position) > range * range)
         {
             position = position.normalized * range;
         }
-
-
-        positionHistory.RemoveAt(0);
-        positionHistory.Add(position);
-
-        float minLength1 = 0.05f, minLength2 = 0.075f;
-        int delay1 = 1, delay2 = 4; 
+        
+        float minLength1 = 0.3f, minLength2 = 0.5f;
+        int delay1 = 2, delay2 = 3; 
         
         vertices[0] = position;
+        
+        int c = 10;
+        var dir = new Vector3();
+        for (int i = directionHistory.Count - c; i < directionHistory.Count; i++)
+        {
+            dir += directionHistory[i]/c;
+        }
+        
         vertices[1] = (
-            positionHistory[^delay1] // Index-from-end operation???
-            + (mousePosition - position).normalized * -minLength1
+            positionHistory[^delay1] + dir * -minLength1
             );
         vertices[2] = (
-            positionHistory[^delay2] 
-            + (mousePosition - position).normalized * -minLength1
+            positionHistory[^delay2] + dir * -minLength2
         );
-
         
     }
     
@@ -164,15 +174,38 @@ public class PlayerWing
 
     public void DrawMesh()
     {
+        mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        positionHistory.RemoveAt(0);
+        positionHistory.Add(position);
+        
+        float velocity = Vector3.Magnitude(position - positionHistory[^2])/Time.fixedDeltaTime;
+        // Calculate velocity
+        // -> 1. If fast, just use position history to draw wing
+        // -> 2. If reasonably slow, use position history + default lengths to draw wing to prevent it from disappearing
+        
+        directionHistory.RemoveAt(0);
+        directionHistory.Add(
+            velocity >= 1f 
+                ? (position - positionHistory[^2]).normalized 
+                : (mousePosition - playerTransform.position + position).normalized);
+        
         Vector3 pos1, pos2, pos3;
         float width = 0.1f;
         pos1 = vertices[2];
         pos2 = vertices[1];
         pos3 = vertices[0];
 
-        Vector3 pos2A = ((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
-        Vector3 pos2B = -((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
+        Vector3 v1 = pos1 - pos2;
+        Vector3 v2 = pos3 - pos2;
+
+        if (Vector3.Cross(v1, v2) == Vector3.zero)
+            v1 += new Vector3(0, -0.005f);
+        Vector3 pos2A; // = ((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
+        Vector3 pos2B; // = -((pos1 - pos2).normalized + (pos3 - pos2).normalized).normalized * width + pos2;
         
+        pos2A = ((v1.normalized) + (v2.normalized)).normalized * width + pos2;
+        pos2B = -((v1.normalized) + (v2.normalized)).normalized * width + pos2;
+
         
         mesh.vertices = new Vector3[]
         {
@@ -231,15 +264,14 @@ public class PlayerWingsBehaviour : MonoBehaviour
                 wing2.FollowMouse();
                 break;
         }
+        
+        wing1.DrawMesh();
+        wing2.DrawMesh();;
     }
 
     private void Update()
     {
         wing1.state = Input.GetMouseButton(0) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
         wing2.state = Input.GetMouseButton(1) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
-        
-        
-        wing1.DrawMesh();
-        wing2.DrawMesh();;
     }
 }
