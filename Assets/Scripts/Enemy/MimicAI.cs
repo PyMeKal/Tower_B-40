@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
 public class MimicLeg
@@ -19,15 +21,15 @@ public class MimicLeg
     public bool connected = false;
     public Vector3 target;
     public readonly float speed;
-    public readonly float pullForce;
+    public readonly float force;
     
-    public MimicLeg(bool isSmall, Transform transform, Transform bodyTransform, float speed, float pullForce)
+    public MimicLeg(bool isSmall, Transform transform, Transform bodyTransform, float speed, float force)
     {
         this.isSmall = isSmall;
         this.transform = transform;
         this.bodyTransform = bodyTransform;
         this.speed = speed;
-        this.pullForce = pullForce;
+        this.force = force;
     }
 
     public void MoveToTargetPoint()
@@ -60,6 +62,8 @@ public class MimicAI : MonoBehaviour
     private PFManager pfManager;
     private Transform playerTransform;
 
+    public Transform gizmo;
+
     [Header("Head")]
     [SerializeField] private Transform head;
     [SerializeField] private SpriteRenderer headSprite;
@@ -71,13 +75,19 @@ public class MimicAI : MonoBehaviour
     [SerializeField] private GameObject smallLegObj, legObj;
     [SerializeField][Range(0f, 1f)] private float smallLegChance;
     [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float legSpawnArea;
+    [SerializeField] private float smallLegForce, legForce;
     [SerializeField] private LayerMask wallLayers;
 
     [Header("\nAI")] 
     public PFGrid grid;
     public MimicState state;
     public Vector3 destination;
-    public Queue<Vector3> pathQueue;
+    private Vector3 target;
+    private Queue<Vector3> pathQueue;
+    
+    [SerializeField] private LayerMask sensorLayers;
+    private bool playerInSight;
+    private Vector3 probablePlayerPos;
 
     void CreateLegs(int n)
     {
@@ -92,7 +102,7 @@ public class MimicAI : MonoBehaviour
                 - Small range
                 */
                 GameObject thisNodeObj = Instantiate(smallLegObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 0.25f, 1f);
+                thisNode = new MimicLeg(true, thisNodeObj.transform, transform, 0.25f, smallLegForce);
             }
             else
             {
@@ -101,7 +111,7 @@ public class MimicAI : MonoBehaviour
                 - Medium range
                 */
                 GameObject thisNodeObj = Instantiate(legObj, pos, Quaternion.identity);
-                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.05f, 2f);
+                thisNode = new MimicLeg(false, thisNodeObj.transform, transform, 0.05f, legForce);
             }
             legs.Add(thisNode);
         }
@@ -119,11 +129,16 @@ public class MimicAI : MonoBehaviour
         pfManager = GM.GetPFManager();
         grid = new ("mimic", GM.GetGM().standardAStarTilemap);
         CreateLegs(numLegs);
-        state = MimicState.Search;
+        state = MimicState.Idle;
         playerTransform = GM.GetPlayer().transform;
         pathQueue = new Queue<Vector3>();
         SetLegTargetsStay();
-        
+
+        moveVars.Reset();
+        idleState.Reset();
+        chaseState.Reset();
+
+
         // headSprite = head.GetComponent<SpriteRenderer>();
     }
 
@@ -134,26 +149,86 @@ public class MimicAI : MonoBehaviour
             case MimicState.Sleep:
                 break;
             case MimicState.Idle:
+                STATE_Idle();
                 break;
             case MimicState.Search:
-                STATE_Search();
+                //STATE_Search();
+                break;
+            case MimicState.Chase:
+                STATE_Chase();
                 break;
         }
+        
+        Sight();
         
         HeadBehaviour();
         EyeBehaviour();
         LegsBehaviour();
+
+        gizmo.position = probablePlayerPos;
     }
 
+    void PlayerSightEnter()
+    {
+        playerInSight = true;
+        probablePlayerPos = playerTransform.position;
+        
+        // Change STATE to Chase
+        state = MimicState.Chase;
+    }
+
+    void PlayerSightExit()
+    {
+        playerInSight = false;
+    }
+    
+    void Sight()
+    {
+        int rayCount = 13;
+        float range = 20f;
+        float deltaAngle = Mathf.PI / 12f;
+        
+        // RaycastHit2D[] hits = new RaycastHit2D[rayCount];
+
+        float eyeAngle = Mathf.Atan2(eye.position.y, eye.position.x);
+        bool playerInSightNow = false;  // Used to determine whether the player is in sight in this Sight() call
+        for (int i = 0; i < rayCount; i++)
+        {
+            float thisRayAngle = eyeAngle + deltaAngle * (-(rayCount - 1) / 2f + i);
+            Vector2 dir = new Vector2(Mathf.Cos(thisRayAngle), Mathf.Sin(thisRayAngle));
+            var hit = Physics2D.Raycast(eye.position, dir, range, sensorLayers);
+            Debug.DrawRay(eye.position, dir);
+            if (hit.collider != null && hit.collider.CompareTag("Player"))
+            {
+                if(!playerInSight)
+                    PlayerSightEnter();
+
+                if (!playerInSightNow)
+                {
+                    playerInSightNow = true;
+                    
+                    // Update AI's player position
+                    probablePlayerPos = playerTransform.position;
+                }
+            }
+        }
+
+        if (!playerInSightNow && playerInSight)
+        {
+            PlayerSightExit();
+        }
+    }
+    
     void HeadBehaviour()
     {
         Vector3 headLookAt;
         if (!pathQueue.TryPeek(out headLookAt))
             headLookAt = destination;
 
-        headLookAt = Vector3.Lerp(playerTransform.position, headLookAt, 0.5f);
+        headLookAt = Vector3.Lerp(destination, headLookAt, 0.5f);
 
         float neck = 0.75f, headSpeed = 0.05f;
+        
         Vector3 headTargetPos = (headLookAt - transform.position).normalized * neck;
 
         head.localPosition = Vector3.Lerp(head.localPosition, headTargetPos, headSpeed);
@@ -188,21 +263,19 @@ public class MimicAI : MonoBehaviour
                 leg.MoveToTargetPoint();
                 leg.connected = false;
                 
-                //leg.transform.GetComponent<SpriteRenderer>().sortingOrder =
-                //GetComponent<SpriteRenderer>().sortingOrder - 1;
-                
                 continue;
-            }
-            else
-            {
-                //leg.transform.GetComponent<SpriteRenderer>().sortingOrder =
-                    //GetComponent<SpriteRenderer>().sortingOrder + 1;
             }
             
             if (leg.connected)
             {
                 // #1. Leg connected to surface
-                rb.AddForce(leg.Direction * leg.pullForce + leg.Direction * (leg.pullForce * Vector3.Distance(transform.position, leg.Position)));
+                Vector2 force = leg.Direction * leg.force;
+
+                force *= Vector2.Dot(force, target - transform.position) > 0f
+                    ? 1f
+                    : -1f;
+                
+                rb.AddForce(force);
                 continue;
             }
             
@@ -229,14 +302,14 @@ public class MimicAI : MonoBehaviour
         Vector3 targetDirection = (target - transform.position).normalized;
         Vector3 gravityForce = (rb.mass * rb.gravityScale * Physics2D.gravity);
         Vector3 netForce = gravityForce;
-        legs.ForEach(leg => netForce += leg.connected ? (leg.Direction * leg.pullForce) : Vector3.zero);
+        legs.ForEach(leg => netForce += leg.connected ? (leg.Direction * leg.force) : Vector3.zero);
 
 
-        Vector3 netForceDirDeviation = targetDirection - netForce.normalized;
+        float dotProduct = Vector3.Dot(targetDirection,netForce.normalized);
+
+        const float minDot = 1.7f / 2f;  // roughly cos(30deg)
         
-        const float DIRECTION_THRESHOLD = 0.25f;
-        
-        if (Vector3.SqrMagnitude(netForceDirDeviation) < DIRECTION_THRESHOLD)
+        if (Mathf.Abs(dotProduct) > minDot)
         {
             // #1. netForce somewhat leads to target
             // return true;
@@ -244,14 +317,22 @@ public class MimicAI : MonoBehaviour
         
         // #2. netForce leads away from target
         MimicLeg leastOptimalLeg = legs[0];
+        float leastOptimalDot = 1f;
         foreach (var leg in legs)
         {
             if(!leg.connected) continue;
-            
+            /*
             float thisDirectionDeviation = (targetDirection - leg.Direction).sqrMagnitude;
             float worstDirectionDeviation = (targetDirection - leastOptimalLeg.Direction).sqrMagnitude;
             if (thisDirectionDeviation > worstDirectionDeviation)
                 leastOptimalLeg = leg;
+                */
+            float thisDot = Vector3.Dot(targetDirection, leg.Direction);
+            if (Mathf.Abs(leastOptimalDot) > Mathf.Abs(thisDot))
+            {
+                leastOptimalLeg = leg;
+                leastOptimalDot = thisDot;
+            }
         }
         
         // Set new target for least optimal leg
@@ -264,7 +345,10 @@ public class MimicAI : MonoBehaviour
         do
         {
             // (netForce + F).normalized = targetDirection
-            Vector3 newLegDir = targetDirection + netForceDirDeviation * 0.5f;
+            Vector3 newLegDir = 
+                Random.value > 0.5f
+                ? -targetDirection
+                : targetDirection;
 
             float newLegDirRad = Mathf.Atan2(newLegDir.y, newLegDir.x) + theta;
             newLegDir.x = Mathf.Cos(newLegDirRad);
@@ -286,9 +370,11 @@ public class MimicAI : MonoBehaviour
         return true;
     }
 
+    private Vector3 stasisPosition;
     void SetLegTargetsStay()
     {
         Vector3[] connectionPoints = new Vector3[numLegs];
+        target = stasisPosition;
         float theta = 0f;
         for (int i = 0; i < numLegs; i++)
         {
@@ -343,16 +429,29 @@ public class MimicAI : MonoBehaviour
         if(clear)
             pathQueue.Clear();
         
+        List<Vector3> path = new List<Vector3>();
         PFNode nearestNode = GetNearestNode(transform.position);
         PFNode nearestDestinationNode = GetNearestNode(target);
-        List<Vector3> path = new List<Vector3>();
-        
-        if (nearestNode != nearestDestinationNode)
+        // Head straight to target with A* if it's visible and within range
+        float closeEnoughRange = 12f;
+        if (Physics2D.Raycast(transform.position, target - transform.position, closeEnoughRange, wallLayers).collider ==
+            null)
+        {
+            // #0. target visible from current position
+            path = grid.GetAStarPath(transform.position, target).ToList();
+        }
+        else if(nearestNode != nearestDestinationNode)
         {
             // #1. start node != end node
             Vector2[] nodePath = 
                 pfManager.pfGraph.GetDijkstraPath(nearestNode, nearestDestinationNode, debug:true).Select(node => node.position).ToArray();
 
+            if (nodePath.Length == 0)
+            {
+                Debug.LogWarning("Error in graph pathfinding :(");
+                return;
+            }
+            
             if (Vector3.Distance(nodePath[0], nodePath[1]) >
                 Vector3.Distance(transform.position, nodePath[1]))
                 nodePath = nodePath.Skip(1).ToArray();
@@ -411,70 +510,221 @@ public class MimicAI : MonoBehaviour
         pathProcessed.Add(path.Last());
         // pathProcessed.ForEach(tile => print(tile));
 
-        // Head straight towards 1st node if it's closer than 0st node
+       
         
         pathProcessed.ForEach(tile => pathQueue.Enqueue(tile));
     }
-    
+    // ------------------------------------------------------------------------------------------------
     // Variables for STATE: Search
     [System.Serializable]
-    public struct MimicSearchState
+    public struct MimicMoveVariables
     {
         public float refreshPathClock;
         [HideInInspector] public float refreshPathClockTimer;
-        [HideInInspector] public bool atDestination;
 
         public float setLegTargetClock;
         [HideInInspector] public float setLegTargetClockTimer;
+
+        public void Reset()  // I can apparently add functions to structs in C# lmfao
+        {
+            refreshPathClockTimer = refreshPathClock;
+            setLegTargetClockTimer = setLegTargetClock;
+        }
     }
 
-    [Header("Variables for State: Search")]
-    public MimicSearchState searchState;
+    [Header("Variables for moving from point A to B")]
+    public MimicMoveVariables moveVars;
     
-    void STATE_Search()
+    float MoveToDestination(Vector3 thisDestination)  // Returns distance to destination
     {
-        void ResetDestination()
+        if (moveVars.refreshPathClockTimer <= 0f)
         {
-            destination = playerTransform.position;
-            searchState.atDestination = false;
-        }
-        
-        
-        if (searchState.refreshPathClockTimer <= 0f)
-        {
-            searchState.refreshPathClockTimer = searchState.refreshPathClock;
-            ResetDestination();
-            EnqueuePath(playerTransform.position, true);
+            moveVars.refreshPathClockTimer = moveVars.refreshPathClock;
+            EnqueuePath(thisDestination, true);
         }
 
-        Vector3 target;
-        searchState.atDestination = !pathQueue.TryPeek(out target);
-        // #1. Destination reached (path queue empty)
-        if (searchState.atDestination)
-        {
-            // print("Destination Reached");
-        }
-        // #2. Destination not reached
-        else
+        target = thisDestination;
+        if(pathQueue.TryPeek(out target))
         {
             Vector3 direction = target - transform.position;
             // rb.velocity = direction.normalized * 4f; // Placeholder
 
-            if (searchState.setLegTargetClockTimer <= 0f)
+            if (moveVars.setLegTargetClockTimer <= 0f)
             {
-                searchState.setLegTargetClockTimer = searchState.setLegTargetClock;
+                moveVars.setLegTargetClockTimer = moveVars.setLegTargetClock;
                 SetLegTargetsMove(target);
             }
-            
+        
             if (direction.sqrMagnitude < 0.5f)
             {
                 pathQueue.Dequeue();
             }
         }
-        
-        // Update searchState
-        searchState.refreshPathClockTimer -= Time.fixedDeltaTime;
-        searchState.setLegTargetClockTimer -= Time.fixedDeltaTime;
+   
+        // Update moveVars
+        moveVars.refreshPathClockTimer -= Time.fixedDeltaTime;
+        moveVars.setLegTargetClockTimer -= Time.fixedDeltaTime;
 
+        return Vector3.Distance(thisDestination, transform.position);
+    }
+    // ------------------------------------------------------------------------------------------------
+    // Preserved variables for STATE: Idle
+    [System.Serializable]
+    public struct MimicIdleState
+    {
+        public float stasisClockMax, stasisClockMin;
+        [HideInInspector] public float stasisClock;
+        public float timeOut;
+        [HideInInspector] public float timeOutTimer;
+
+        [HideInInspector] public Vector3 currentDestination;
+
+        public bool isStatic;
+
+        public void Reset()
+        {
+            stasisClock = Random.Range(stasisClockMin, stasisClockMax);
+            timeOutTimer = timeOut;
+            currentDestination = Vector3.zero;
+            isStatic = false;
+        }
+    }
+
+    void EnterIdleState()
+    {
+        idleState.Reset();
+        state = MimicState.Idle;
+    }
+    
+    [SerializeField] private MimicIdleState idleState;
+    
+    public void STATE_Idle()
+    {
+        Vector3 GetRandomDestination()
+        {
+            float pi = Mathf.PI;
+
+            float rayLength = 10f;
+            
+            int rayCount = Random.Range(3, 7);
+            Vector3[] candidates = new Vector3[rayCount];
+            for (int i = 0; i < rayCount; i++)
+            {
+                float angle = Random.Range(-pi / 3, pi / 3) + (Random.value >= 0.5f ? 1f : 0f) * pi;
+                Vector3 dir = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle));
+                RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, rayLength, wallLayers);
+                
+                candidates[i] += hit.collider != null
+                    ? hit.point + ((Vector2)transform.position - hit.point).normalized * 1f
+                    : (Vector3)hit.point;
+            }
+    
+            return candidates[Random.Range(0, rayCount)];
+        }
+        
+        if (idleState is { stasisClock: > 0f, isStatic: false })   // WHAT
+        {
+            stasisPosition = transform.position;
+            SetLegTargetsStay();
+            idleState.isStatic = true;
+        }
+        else if (idleState is { stasisClock: <= 0f, isStatic: true })
+        {
+            idleState.isStatic = false;
+            idleState.currentDestination = GetRandomDestination();
+            destination = idleState.currentDestination;
+        }
+        else if (idleState is { stasisClock: <= 0f, isStatic: false })
+        {
+            float dist = MoveToDestination(idleState.currentDestination);
+            if (dist <= 2f)
+            {
+                idleState.stasisClock = Random.Range(idleState.stasisClockMin, idleState.stasisClockMax);
+            }
+        }
+        else
+        {
+            idleState.stasisClock -= Time.fixedDeltaTime;
+        }
+
+        idleState.timeOutTimer -= Time.fixedDeltaTime;
+        if (idleState is { timeOutTimer: <= 0f, isStatic: false })
+        {
+            idleState.Reset();
+        }
+    }
+    
+    // ------------------------------------------------------------------------------------------------
+    // Chase
+    [System.Serializable]
+    struct MimicChaseState
+    {
+        public float timeOut;
+        
+        [HideInInspector] public List<Vector3> playerPosHistory;
+        [HideInInspector] public float timeSinceSightExit;
+        [HideInInspector] public Vector3 finalPlayerSighting;
+        
+        public void Reset()
+        {
+            var playerPos = GM.GetPlayerPosition();
+            int cap = 60;
+            playerPosHistory = new List<Vector3>(cap);
+            for (int i = 0; i < cap; i++)
+                playerPosHistory.Add(playerPos);
+            timeSinceSightExit = 0f;
+            finalPlayerSighting = playerPos;
+        }
+
+        public void UpdatePlayerPosHistory()
+        {
+            playerPosHistory.RemoveAt(0);
+            playerPosHistory.Add(GM.GetPlayerPosition());
+        }
+    }
+
+    [SerializeField] private MimicChaseState chaseState;
+    
+    void STATE_Chase()
+    {
+        Vector3 GuessPlayerPosition()
+        {
+            Vector3 generalDir = chaseState.playerPosHistory.Last() - chaseState.playerPosHistory.First();
+            float t = chaseState.timeSinceSightExit;
+            Vector3 v = generalDir / (Time.fixedDeltaTime * chaseState.playerPosHistory.Count);
+
+            RaycastHit2D hit = Physics2D.Raycast(chaseState.finalPlayerSighting, generalDir, 
+                t * v.magnitude, wallLayers);
+            if (hit.collider == null)
+            {
+                return t * v + chaseState.finalPlayerSighting;
+            }
+            else
+            {
+                return hit.point + ((Vector2)transform.position - hit.point).normalized * 0.25f;
+            }
+        }
+        
+        
+        if (playerInSight)
+        {
+            chaseState.UpdatePlayerPosHistory();
+            chaseState.finalPlayerSighting = probablePlayerPos;
+            chaseState.timeSinceSightExit = 0f;
+        }
+        else
+        {
+            chaseState.timeSinceSightExit += Time.fixedDeltaTime;
+            if (chaseState.timeSinceSightExit > chaseState.timeOut)
+            {
+                EnterIdleState();
+                chaseState.Reset();
+            }
+            probablePlayerPos = GuessPlayerPosition();
+        }
+        
+        destination = probablePlayerPos;
+        
+        MoveToDestination(destination);
     }
 }

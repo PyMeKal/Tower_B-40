@@ -177,11 +177,19 @@ public class PFGrid
             return Array.Empty<Vector3>();
         }
 
-        if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
+        try
         {
-            // Debug.LogWarning("Start or end not reachable");
-            return Array.Empty<Vector3>();
+            if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
+            {
+                // Debug.LogWarning("Start or end not reachable");
+                return Array.Empty<Vector3>();
+            }
         }
+        catch
+        {
+            Debug.LogWarning($"INDEX RANGE ERROR: {end.x}, {end.y}, {start.x}, {start.y}");
+        }
+        
             
         // Since we're working with arrays of structs, we should store each index for x&y instead of the tile data.
         // -> access PFGrid.tiles directly.
