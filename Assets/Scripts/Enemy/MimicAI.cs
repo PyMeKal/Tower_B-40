@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using Unity.Mathematics;
-using Unity.VisualScripting;
+using Unity.Burst;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -55,6 +52,8 @@ public enum MimicState
     Dead
 }
 
+
+[BurstCompile]
 public class MimicAI : MonoBehaviour
 {
     private Rigidbody2D rb;
@@ -137,9 +136,6 @@ public class MimicAI : MonoBehaviour
         moveVars.Reset();
         idleState.Reset();
         chaseState.Reset();
-
-
-        // headSprite = head.GetComponent<SpriteRenderer>();
     }
 
     void FixedUpdate()
@@ -175,6 +171,7 @@ public class MimicAI : MonoBehaviour
         
         // Change STATE to Chase
         state = MimicState.Chase;
+        chaseState.Reset();
     }
 
     void PlayerSightExit()
@@ -184,6 +181,7 @@ public class MimicAI : MonoBehaviour
     
     void Sight()
     {
+        /*
         int rayCount = 13;
         float range = 20f;
         float deltaAngle = Mathf.PI / 12f;
@@ -217,12 +215,45 @@ public class MimicAI : MonoBehaviour
         {
             PlayerSightExit();
         }
+        */
+        
+        // Theta disabled for now
+
+        var eyePosition = eye.position;
+        var playerPosition = playerTransform.position;
+        // Vector3 eyeDir = eyePosition.normalized;
+        Vector3 playerDir = (playerPosition - eyePosition).normalized;
+        
+        
+        // float theta = Mathf.Acos(Vector3.Dot(eyeDir, playerDir));
+
+        // float maxTheta = 2 * Mathf.PI / 3f;
+        float maxDist = 15f;
+        float dist = Vector3.Distance(eyePosition, playerPosition);
+        RaycastHit2D hit = Physics2D.Raycast(eyePosition, playerDir, dist, wallLayers);
+        // print((theta >= maxTheta) + " " + (dist > maxDist) + " " + (hit.collider != null));
+        // print(theta);
+        if (dist > maxDist || hit.collider != null) // theta >= maxTheta ||  
+        {
+            if (playerInSight)
+            {
+                playerInSight = false;
+                PlayerSightExit();
+            }
+        }
+        else if(!playerInSight)
+        {
+            playerInSight = true;
+            PlayerSightEnter();
+        }
     }
     
     void HeadBehaviour()
     {
         Vector3 headLookAt;
-        if (!pathQueue.TryPeek(out headLookAt))
+        if (playerInSight)
+            headLookAt = probablePlayerPos;
+        else if (!pathQueue.TryPeek(out headLookAt))
             headLookAt = destination;
 
         headLookAt = Vector3.Lerp(destination, headLookAt, 0.5f);
@@ -248,7 +279,7 @@ public class MimicAI : MonoBehaviour
         // Applied distanceScale & offset
         Vector3 eyeTargetPos = new Vector3(eyeTargetPosRaw.x * distanceScale.x, eyeTargetPosRaw.y * distanceScale.y) + offset;
 
-        float eyeSpeed = 0.05f;
+        float eyeSpeed = 0.1f;
         eye.localPosition = Vector3.Lerp(eye.localPosition, eyeTargetPos, eyeSpeed);
     }
 
@@ -661,9 +692,9 @@ public class MimicAI : MonoBehaviour
     {
         public float timeOut;
         
-        [HideInInspector] public List<Vector3> playerPosHistory;
-        [HideInInspector] public float timeSinceSightExit;
-        [HideInInspector] public Vector3 finalPlayerSighting;
+        public List<Vector3> playerPosHistory;
+        public float timeSinceSightExit;
+        public Vector3 finalPlayerSighting;
         
         public void Reset()
         {
@@ -691,24 +722,26 @@ public class MimicAI : MonoBehaviour
         {
             Vector3 generalDir = chaseState.playerPosHistory.Last() - chaseState.playerPosHistory.First();
             float t = chaseState.timeSinceSightExit;
+            float fadeT = Mathf.Sqrt(t+1) - 1f;
+            
             Vector3 v = generalDir / (Time.fixedDeltaTime * chaseState.playerPosHistory.Count);
 
             RaycastHit2D hit = Physics2D.Raycast(chaseState.finalPlayerSighting, generalDir, 
-                t * v.magnitude, wallLayers);
+                fadeT * v.magnitude, wallLayers);
             if (hit.collider == null)
             {
-                return t * v + chaseState.finalPlayerSighting;
+                return fadeT * v + chaseState.finalPlayerSighting;
             }
-            else
-            {
-                return hit.point + ((Vector2)transform.position - hit.point).normalized * 0.25f;
-            }
+            
+            return hit.point + ((Vector2)transform.position - hit.point).normalized * 0.25f;
         }
+        
         
         
         if (playerInSight)
         {
             chaseState.UpdatePlayerPosHistory();
+            probablePlayerPos = playerTransform.position;
             chaseState.finalPlayerSighting = probablePlayerPos;
             chaseState.timeSinceSightExit = 0f;
         }

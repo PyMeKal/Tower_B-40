@@ -16104,7 +16104,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6146107269340821662, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: chaseState.timeOut
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6146107269340821662, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: sensorLayers.m_Bits

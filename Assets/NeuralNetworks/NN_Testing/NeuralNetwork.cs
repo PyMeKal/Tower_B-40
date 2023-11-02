@@ -4,9 +4,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Runtime.Serialization.Json;
-using Unity.Burst;
-using UnityEditor.Experimental.GraphView;
 using Random = UnityEngine.Random; // Praise jetbrains
 using System.IO;
 
