@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Burst;
+using Unity.VisualScripting.FullSerializer;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,6 +14,7 @@ public class MimicLeg
     public bool disabled;
     public Transform transform;
     public Transform bodyTransform;
+    public LineRenderer lineRenderer;
     public Vector3 Position => transform.position;
     public Vector3 Direction => (target - bodyTransform.position).normalized;
     public bool connected = false;
@@ -27,6 +29,7 @@ public class MimicLeg
         this.bodyTransform = bodyTransform;
         this.speed = speed;
         this.force = force;
+        lineRenderer = transform.GetComponent<LineRenderer>();
     }
 
     public void MoveToTargetPoint()
@@ -39,6 +42,62 @@ public class MimicLeg
         */
 
         transform.position = Vector3.Lerp(Position, target, speed);
+    }
+
+    public void DrawCableToBody()
+    {
+        int verticesPerUnitLength = 3;
+        Vector3 p = Position, q = bodyTransform.position;
+
+        
+        
+        float dist = Vector3.Distance(Position, q);
+        
+        int vertexCount = Mathf.RoundToInt(dist * verticesPerUnitLength);
+        float sagging = 2f / (dist*dist + 0.1f);
+        Vector3[] vertices = new Vector3[vertexCount];
+        
+        // Going for a parabola connecting the two points (leg and body) with first coefficient fixed to alpha
+        // alpha is determined by sagging
+        // y = alpha*x^2 + beta*x + gamma
+
+        float alpha = sagging;
+        float beta = (alpha * (q.x * q.x - p.x * p.x) + p.y - q.y) / (p.x - q.x + 0.01f);
+        float gamma = p.y - alpha * p.x * p.x - beta * p.x;
+
+        if (Mathf.Abs(p.x - q.x) < 0.05f)
+        {
+            float lowPointX = -beta / (2 * alpha);
+            if ((lowPointX < q.x && lowPointX > p.x) || (lowPointX > q.x && lowPointX < p.x))
+            {
+                lineRenderer.positionCount = 3;
+                lineRenderer.SetPosition(0, p);
+                
+                lineRenderer.SetPosition(1, 
+                    new Vector3(lowPointX, alpha * lowPointX * lowPointX + beta * lowPointX + gamma));
+                
+                lineRenderer.SetPosition(2, q);
+            }
+            else
+            {
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPosition(0, p);
+                lineRenderer.SetPosition(1, q);
+            }
+            return;
+        }
+        
+        
+        float deltaX = (p.x - q.x) / (vertexCount < 2 ? 1 : vertexCount-1);
+        for (int i = 0; i < vertexCount; i++)
+        {
+            float x = q.x + deltaX * i;
+            vertices[i] = new Vector3(x, alpha * x * x + beta * x + gamma);
+        }
+
+        // Render line
+        lineRenderer.positionCount = vertexCount;
+        lineRenderer.SetPositions(vertices);
     }
 }
 
@@ -148,7 +207,7 @@ public class MimicAI : MonoBehaviour
                 STATE_Idle();
                 break;
             case MimicState.Search:
-                //STATE_Search();
+                STATE_Search();
                 break;
             case MimicState.Chase:
                 STATE_Chase();
@@ -170,8 +229,7 @@ public class MimicAI : MonoBehaviour
         probablePlayerPos = playerTransform.position;
         
         // Change STATE to Chase
-        state = MimicState.Chase;
-        chaseState.Reset();
+        EnterChaseState();
     }
 
     void PlayerSightExit()
@@ -287,6 +345,7 @@ public class MimicAI : MonoBehaviour
     {
         foreach (var leg in legs)
         {
+            leg.DrawCableToBody();
             if (leg.disabled)
             {
                 // #0. Leg disabled
@@ -317,6 +376,7 @@ public class MimicAI : MonoBehaviour
             {
                 leg.connected = true;
             }
+            
         }
     }
 
@@ -326,8 +386,6 @@ public class MimicAI : MonoBehaviour
     /// true: successful
     /// false: failed
     /// </summary>
-    /// <param name="target"></param>
-    /// <returns></returns>
     bool SetLegTargetsMove(Vector3 target)
     {
         Vector3 targetDirection = (target - transform.position).normalized;
@@ -351,7 +409,7 @@ public class MimicAI : MonoBehaviour
         float leastOptimalDot = 1f;
         foreach (var leg in legs)
         {
-            if(!leg.connected) continue;
+            // if(!leg.connected) continue;
             /*
             float thisDirectionDeviation = (targetDirection - leg.Direction).sqrMagnitude;
             float worstDirectionDeviation = (targetDirection - leastOptimalLeg.Direction).sqrMagnitude;
@@ -367,7 +425,7 @@ public class MimicAI : MonoBehaviour
         }
         
         // Set new target for least optimal leg
-        float thetaInterval = 3.14f / 32f;
+        float thetaInterval = Mathf.PI / 32f;
         float theta = 0f;
         float thetaDir = 1f;
 
@@ -436,33 +494,14 @@ public class MimicAI : MonoBehaviour
         }
     }
 
-    PFNode GetNearestNode(Vector3 position)
-    {
-        PFNode[] nodes = pfManager.pfGraph.nodes;
-        PFNode nearestNode = nodes[0];
-        float nearestNodeDistSqr = Mathf.Infinity;
-        for(int i = 0; i < nodes.Length; i++)
-        {
-            Vector2 delta = new Vector2(nodes[i].position.x - position.x, nodes[i].position.y - position.y);
-            float dSqr = delta.sqrMagnitude;
-            if (dSqr < nearestNodeDistSqr)
-            {
-                nearestNode = nodes[i];
-                nearestNodeDistSqr = dSqr;
-            }
-        }
-
-        return nearestNode;
-    }
-
     void EnqueuePath(Vector3 target, bool clear=false)
     {
         if(clear)
             pathQueue.Clear();
         
         List<Vector3> path = new List<Vector3>();
-        PFNode nearestNode = GetNearestNode(transform.position);
-        PFNode nearestDestinationNode = GetNearestNode(target);
+        PFNode nearestNode = PFManager.GetNearestNode(transform.position);
+        PFNode nearestDestinationNode = PFManager.GetNearestNode(target);
         // Head straight to target with A* if it's visible and within range
         float closeEnoughRange = 12f;
         if (Physics2D.Raycast(transform.position, target - transform.position, closeEnoughRange, wallLayers).collider ==
@@ -714,6 +753,12 @@ public class MimicAI : MonoBehaviour
         }
     }
 
+    void EnterChaseState()
+    {
+        chaseState.Reset();
+        state = MimicState.Chase;
+    }
+    
     [SerializeField] private MimicChaseState chaseState;
     
     void STATE_Chase()
@@ -723,19 +768,19 @@ public class MimicAI : MonoBehaviour
             Vector3 generalDir = chaseState.playerPosHistory.Last() - chaseState.playerPosHistory.First();
             float t = chaseState.timeSinceSightExit;
             float fadeT = Mathf.Sqrt(t+1) - 1f;
+            float velocityCoeff = 2f;
             
             Vector3 v = generalDir / (Time.fixedDeltaTime * chaseState.playerPosHistory.Count);
 
             RaycastHit2D hit = Physics2D.Raycast(chaseState.finalPlayerSighting, generalDir, 
-                fadeT * v.magnitude, wallLayers);
+                velocityCoeff * fadeT * v.magnitude, wallLayers);
             if (hit.collider == null)
             {
-                return fadeT * v + chaseState.finalPlayerSighting;
+                return velocityCoeff * fadeT * v + chaseState.finalPlayerSighting;
             }
             
             return hit.point + ((Vector2)transform.position - hit.point).normalized * 0.25f;
         }
-        
         
         
         if (playerInSight)
@@ -750,14 +795,70 @@ public class MimicAI : MonoBehaviour
             chaseState.timeSinceSightExit += Time.fixedDeltaTime;
             if (chaseState.timeSinceSightExit > chaseState.timeOut)
             {
-                EnterIdleState();
-                chaseState.Reset();
+                EnterSearchState();
             }
             probablePlayerPos = GuessPlayerPosition();
         }
         
         destination = probablePlayerPos;
         
+        MoveToDestination(destination);
+    }
+    
+    // ------------------------------------------------------------------------------------------------
+    // Search
+
+    [System.Serializable]
+    public struct MimicStateSearch
+    {
+        public PFNode currentNode;
+        public PFNode nextNode;
+        public List<PFNode> searchedNodes;
+
+        public void Reset(Transform self)
+        {
+            print("Search state Reset() call");
+            currentNode = PFManager.GetNearestNode(self.position);
+            nextNode = currentNode.adjacentNodes[Random.Range(0, currentNode.adjacentNodes.Length)];
+            searchedNodes = new List<PFNode>();
+        }
+    }
+
+    void EnterSearchState()
+    {
+        print("Entered search state");
+        searchState.Reset(transform);
+        state = MimicState.Search;
+    }
+    
+    [SerializeField] private MimicStateSearch searchState;
+    
+    void STATE_Search()
+    {
+        float distToNextNode = Vector3.Distance(transform.position, searchState.nextNode.position);
+        float distThresh = 1.5f;
+        if (distToNextNode <= distThresh)
+        {
+            // next node reached. Update current node
+            searchState.searchedNodes.Add(searchState.currentNode);
+            searchState.currentNode = searchState.nextNode;
+            
+            // Filter available next nodes to only contain nodes that haven't been searched
+            PFNode[] availableNodes = searchState.currentNode.adjacentNodes
+                .Where(n => !searchState.searchedNodes.Contains(n)).ToArray();
+
+            if (availableNodes.Length == 0)
+            {
+                searchState.Reset(transform);
+            }
+            else
+            {
+                searchState.nextNode = availableNodes[Random.Range(0, availableNodes.Length)];
+            }
+        }
+
+        destination = searchState.nextNode.position;
+        probablePlayerPos = searchState.nextNode.position;
         MoveToDestination(destination);
     }
 }

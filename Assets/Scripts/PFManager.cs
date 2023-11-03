@@ -493,4 +493,23 @@ public class PFManager : MonoBehaviour
     {
         pfGraph = new PFGraph(graphTransform, true);
     }
+    
+    public static PFNode GetNearestNode(Vector3 position)
+    {
+        PFNode[] nodes = GM.GetPFManager().pfGraph.nodes;
+        PFNode nearestNode = nodes[0];
+        float nearestNodeDistSqr = Mathf.Infinity;
+        foreach (var node in nodes)
+        {
+            Vector2 delta = new Vector2(node.position.x - position.x, node.position.y - position.y);
+            float dSqr = delta.sqrMagnitude;
+            if (dSqr < nearestNodeDistSqr)
+            {
+                nearestNode = node;
+                nearestNodeDistSqr = dSqr;
+            }
+        }
+
+        return nearestNode;
+    }
 }
