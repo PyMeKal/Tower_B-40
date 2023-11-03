@@ -220,7 +220,7 @@ public class MimicAI : MonoBehaviour
         EyeBehaviour();
         LegsBehaviour();
 
-        gizmo.position = probablePlayerPos;
+        // gizmo.position = probablePlayerPos;
     }
 
     void PlayerSightEnter()

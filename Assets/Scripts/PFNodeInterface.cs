@@ -31,7 +31,7 @@ public class PFNodeInterface : MonoBehaviour
         if (!drawDebugLines)
             return;
         
-        Handles.Label(transform.position, index.ToString());
+        // Handles.Label(transform.position, index.ToString());
         foreach (var t in adjacentNodeTransforms)
         {
             Gizmos.DrawLine(transform.position, t.position);

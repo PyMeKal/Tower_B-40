@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NeuralNetworks.NN_Testing;
 using Unity.Mathematics;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class PathFinderAgent : MonoBehaviour
