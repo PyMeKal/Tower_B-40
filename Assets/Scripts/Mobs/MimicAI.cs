@@ -243,42 +243,6 @@ public class MimicAI : MonoBehaviour
     
     void Sight()
     {
-        /*
-        int rayCount = 13;
-        float range = 20f;
-        float deltaAngle = Mathf.PI / 12f;
-        
-        // RaycastHit2D[] hits = new RaycastHit2D[rayCount];
-
-        float eyeAngle = Mathf.Atan2(eye.position.y, eye.position.x);
-        bool playerInSightNow = false;  // Used to determine whether the player is in sight in this Sight() call
-        for (int i = 0; i < rayCount; i++)
-        {
-            float thisRayAngle = eyeAngle + deltaAngle * (-(rayCount - 1) / 2f + i);
-            Vector2 dir = new Vector2(Mathf.Cos(thisRayAngle), Mathf.Sin(thisRayAngle));
-            var hit = Physics2D.Raycast(eye.position, dir, range, sensorLayers);
-            Debug.DrawRay(eye.position, dir);
-            if (hit.collider != null && hit.collider.CompareTag("Player"))
-            {
-                if(!playerInSight)
-                    PlayerSightEnter();
-
-                if (!playerInSightNow)
-                {
-                    playerInSightNow = true;
-                    
-                    // Update AI's player position
-                    probablePlayerPos = playerTransform.position;
-                }
-            }
-        }
-
-        if (!playerInSightNow && playerInSight)
-        {
-            PlayerSightExit();
-        }
-        */
-        
         // Theta disabled for now
 
         var eyePosition = eye.position;
@@ -332,7 +296,7 @@ public class MimicAI : MonoBehaviour
     void EyeBehaviour()
     {
         // For eye + pupil
-        Vector3 distanceScale = new Vector3(0.1f, 0.2f);
+        Vector3 distanceScale = new Vector3(0.15f, 0.2f);
         Vector3 offset = new Vector3(0, 0);
 
         Vector3 eyeLookAt = destination;

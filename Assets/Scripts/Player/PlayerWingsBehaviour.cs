@@ -253,25 +253,35 @@ public class PlayerWing
     {
         
         int c = positionHistory.Count;
+
+        Vector3 deltaPos = position - positionHistory[c - 2];
         Vector3 playerPos = playerTransform.position;
-        RaycastHit2D hit = Physics2D.Raycast( playerPos + positionHistory[c - 2], position - positionHistory[c - 2], 
+        RaycastHit2D hit = Physics2D.Raycast( playerPos + positionHistory[c - 2], deltaPos, 
             Vector3.Distance(positionHistory[c - 2], position), collisionLayers);
 
         MobStatsInterface mobStatsInterface;
-        if (hit.collider != null)
-        {
-            Debug.Log(hit.collider.name);
-            mobStatsInterface = hit.collider.GetComponent<MobStatsInterface>();
-        }
-        else
+        
+        if (!hit.collider)
+            return;
+
+        HitboxInterface hbInterface = hit.collider.GetComponent<HitboxInterface>();
+        if(!hbInterface)
             return;
         
+        GameObject targetObj = hbInterface.masterObject;
+        
+        mobStatsInterface = targetObj.GetComponent<MobStatsInterface>();
         if (mobStatsInterface != null)
         {
             mobStatsInterface.stats.TakeDamage(10f);
             coolingDown = true;
             state = PlayerWingState.cooldown;
         }
+
+        Rigidbody2D targetRb = targetObj.GetComponent<Rigidbody2D>();
+        Vector3 impulse = deltaPos * 1000f;  // For now
+        if(targetRb)
+            targetRb.AddForce(impulse);
     }
 
     public void Update()
