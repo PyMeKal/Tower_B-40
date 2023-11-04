@@ -117,6 +117,8 @@ public class MimicAI : MonoBehaviour
 {
     private Rigidbody2D rb;
 
+    private MobStats stats;
+    
     private PFManager pfManager;
     private Transform playerTransform;
 
@@ -184,6 +186,8 @@ public class MimicAI : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        stats = GetComponent<MobStatsInterface>().stats;
+        stats.deathAction = Die;
         pfManager = GM.GetPFManager();
         grid = new ("mimic", GM.GetGM().standardAStarTilemap);
         CreateLegs(numLegs);
@@ -860,5 +864,10 @@ public class MimicAI : MonoBehaviour
         destination = searchState.nextNode.position;
         probablePlayerPos = searchState.nextNode.position;
         MoveToDestination(destination);
+    }
+
+    void Die()
+    {
+        Destroy(gameObject);
     }
 }

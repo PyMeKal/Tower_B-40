@@ -1,11 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class MobStats
 {
     public string id;
     public float health;
+    public Action deathAction;
 
     public MobStats(string id, float health)
     {
@@ -16,6 +19,15 @@ public class MobStats
     public void TakeDamage(float damage)
     {
         health -= damage;
+        if (health <= 0f)
+        {
+            Die();
+        }
+    }
+
+    public void Die()
+    {
+        deathAction();
     }
 }
 

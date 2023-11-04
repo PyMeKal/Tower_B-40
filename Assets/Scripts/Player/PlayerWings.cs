@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PlayerWings : MonoBehaviour
 {
+    // Legacy script (before overhaul)
+    // unused.
+    
+    
     private Vector3 initialLocalPos;
     [HideInInspector] public Vector3 targetPos;
     [SerializeField] private Transform playerSprite;

@@ -1,10 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
-using UnityEngine.U2D;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
@@ -14,12 +11,15 @@ public class PlayerWing
     {
         idle,
         followMouse,
+        cooldown,
     }
     
     
     public readonly int id;
     public PlayerWingState state;
-    public Material material;
+    public int inputMouseButton;
+    private Material material;
+    private Material cooldownMaterial;
     public Vector3 position;
     public Vector3 idlePosition;
     private Vector3 offsetIdlePosition;
@@ -32,6 +32,12 @@ public class PlayerWing
     public float range;
     private float travelDistanceCoeff;
 
+    private bool coolingDown;
+    private float cooldown;
+    private float cooldownTimer;
+
+    private LayerMask collisionLayers;
+    
     private GameObject meshObject;
     private Mesh mesh;
     private MeshFilter meshFilter;
@@ -44,7 +50,7 @@ public class PlayerWing
 
     private Vector3 mousePosition;
 
-    public PlayerWing(int id, GameObject meshObject, Material material, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff)
+    public PlayerWing(int id, GameObject meshObject, Material material, Material cooldownMaterial, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff, float cooldown, LayerMask collisionLayers)
     {
         this.id = id;
         this.state = PlayerWingState.idle;
@@ -52,6 +58,8 @@ public class PlayerWing
         this.meshObject = meshObject;
         
         this.material = material;
+        this.cooldownMaterial = cooldownMaterial;
+        
         this.idlePosition = idlePosition;
         this.speed = speed;
         this.range = range;
@@ -81,6 +89,11 @@ public class PlayerWing
             vertices.Add(idlePosition + new Vector3(-i*0.05f, 0f));
         }
 
+        this.cooldown = cooldown;
+        cooldownTimer = cooldown;
+
+        this.collisionLayers = collisionLayers;
+        
         state = PlayerWingState.idle;
     }
 
@@ -171,6 +184,18 @@ public class PlayerWing
         }
     }
 
+    public void Cooldown()
+    {
+        Idle();
+        cooldownTimer -= Time.fixedDeltaTime;
+        if (cooldownTimer <= 0f)
+        {
+            coolingDown = false;
+            cooldownTimer = cooldown;
+            state = PlayerWingState.idle;
+        }
+    }
+
     public void DrawMesh()
     {
         mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -221,7 +246,59 @@ public class PlayerWing
         };
 
         meshFilter.mesh = mesh;
-        meshRenderer.material = material;
+        meshRenderer.material = coolingDown ? cooldownMaterial : material;
+    }
+
+    public void WingCollision()
+    {
+        
+        int c = positionHistory.Count;
+        Vector3 playerPos = playerTransform.position;
+        RaycastHit2D hit = Physics2D.Raycast( playerPos + positionHistory[c - 2], position - positionHistory[c - 2], 
+            Vector3.Distance(positionHistory[c - 2], position), collisionLayers);
+
+        MobStatsInterface mobStatsInterface;
+        if (hit.collider != null)
+        {
+            Debug.Log(hit.collider.name);
+            mobStatsInterface = hit.collider.GetComponent<MobStatsInterface>();
+        }
+        else
+            return;
+        
+        if (mobStatsInterface != null)
+        {
+            mobStatsInterface.stats.TakeDamage(10f);
+            coolingDown = true;
+            state = PlayerWingState.cooldown;
+        }
+    }
+
+    public void Update()
+    {
+        if (state != PlayerWingState.cooldown)
+        {
+            state = Input.GetMouseButton(inputMouseButton) ? PlayerWingState.followMouse : PlayerWingState.idle;
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        switch (state)
+        {
+            case PlayerWingState.idle:
+                Idle();
+                break;
+            case PlayerWingState.followMouse:
+                FollowMouse();
+                WingCollision();
+                break;
+            case PlayerWingState.cooldown:
+                Cooldown();
+                break;
+        }
+        
+        DrawMesh();
     }
 }
 
@@ -231,46 +308,33 @@ public class PlayerWingsBehaviour : MonoBehaviour
 
     public PlayerWing wing1, wing2;
 
-    public Material wing1Material, wing2Material;
+    public Material wingMaterial, wingCooldownMaterial;
 
-    public Vector3 wing1Offset = new Vector3(-0.5f, 0.5f);
-    public Vector3 wing2Offset = new Vector3(-0.25f, 0.5f);
+    public Vector3 wing1Offset = new (-0.5f, 0.5f);
+    public Vector3 wing2Offset = new (-0.25f, 0.5f);
+
+    public float cooldown;
+
+    public LayerMask collisionLayers;
     
     void Start()
     {
-        wing1 = new PlayerWing(1, wing1meshObject, wing1Material, wing1Offset, 0.5f, 7f, 0.75f);
-        wing2 = new PlayerWing(1, wing2meshObject, wing2Material, wing2Offset, 0.5f, 7f, 0.75f);
+        wing1 = new PlayerWing(1, wing1meshObject, wingMaterial, wingCooldownMaterial, wing1Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
+        wing2 = new PlayerWing(1, wing2meshObject, wingMaterial, wingCooldownMaterial, wing2Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
+
+        wing1.inputMouseButton = 0;
+        wing2.inputMouseButton = 1;
     }
     
     private void FixedUpdate()
     {
-        switch (wing1.state)
-        {
-            case PlayerWing.PlayerWingState.idle:
-                wing1.Idle();
-                break;
-            case PlayerWing.PlayerWingState.followMouse:
-                wing1.FollowMouse();
-                break;
-        }
-        
-        switch (wing2.state)
-        {
-            case PlayerWing.PlayerWingState.idle:
-                wing2.Idle();
-                break;
-            case PlayerWing.PlayerWingState.followMouse:
-                wing2.FollowMouse();
-                break;
-        }
-        
-        wing1.DrawMesh();
-        wing2.DrawMesh();;
+        wing1.FixedUpdate();
+        wing2.FixedUpdate();
     }
 
     private void Update()
     {
-        wing1.state = Input.GetMouseButton(0) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
-        wing2.state = Input.GetMouseButton(1) ? PlayerWing.PlayerWingState.followMouse : PlayerWing.PlayerWingState.idle;
+        wing1.Update();
+        wing2.Update();
     }
 }
