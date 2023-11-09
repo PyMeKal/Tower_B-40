@@ -49,6 +49,7 @@ public class PlayerWing
     // => Draw wings based on movement => must perform calculations based on time => must keep history
 
     private Vector3 mousePosition;
+    public TrailRenderer trailRenderer;
 
     public PlayerWing(int id, GameObject meshObject, Material material, Material cooldownMaterial, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff, float cooldown, LayerMask collisionLayers)
     {
@@ -294,6 +295,8 @@ public class PlayerWing
 
     public void FixedUpdate()
     {
+        trailRenderer.enabled = false;
+        
         switch (state)
         {
             case PlayerWingState.idle:
@@ -302,6 +305,10 @@ public class PlayerWing
             case PlayerWingState.followMouse:
                 FollowMouse();
                 WingCollision();
+
+                trailRenderer.enabled = true;
+                trailRenderer.transform.localPosition = vertices[2];
+                
                 break;
             case PlayerWingState.cooldown:
                 Cooldown();
@@ -315,7 +322,7 @@ public class PlayerWing
 public class PlayerWingsBehaviour : MonoBehaviour
 {
     public GameObject wing1meshObject, wing2meshObject;
-
+    
     public PlayerWing wing1, wing2;
 
     public Material wingMaterial, wingCooldownMaterial;
@@ -326,6 +333,7 @@ public class PlayerWingsBehaviour : MonoBehaviour
     public float cooldown;
 
     public LayerMask collisionLayers;
+    public TrailRenderer wing1TrailRenderer, wing2TrailRenderer;
     
     void Start()
     {
@@ -334,6 +342,9 @@ public class PlayerWingsBehaviour : MonoBehaviour
 
         wing1.inputMouseButton = 0;
         wing2.inputMouseButton = 1;
+
+        wing1.trailRenderer = wing1TrailRenderer;
+        wing2.trailRenderer = wing2TrailRenderer;
     }
     
     private void FixedUpdate()
