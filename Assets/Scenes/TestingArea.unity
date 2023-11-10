@@ -42055,7 +42055,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2311074748414079071, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5109401839988099730, guid: c53d32b02dc986a44ae2e79ec70b50f7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -42340,6 +42340,18 @@ PrefabInstance:
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_TargetTexture
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0.5021805
+      objectReference: {fileID: 0}
+    - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0.5360881
+      objectReference: {fileID: 0}
+    - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0.5754717
       objectReference: {fileID: 0}
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_CullingMask.m_Bits
