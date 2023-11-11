@@ -15,7 +15,7 @@ public class Mud : MonoBehaviour
     }
     
     private void OnCollisionEnter2D(Collision2D other) {
-        print("Mud");
+        // print("Mud");
         if (other.gameObject.name == "Player"){
             playerMovement.walkSpeed *= coeffSpeed;  // Switched coeff to apply multiplied speed on mud contact 
             playerMovement.moveAccel *= coeffAccel;
@@ -23,7 +23,7 @@ public class Mud : MonoBehaviour
     }
 
     private void OnCollisionExit2D(Collision2D other) {
-        print("exit");
+        // print("exit");
         if (other.gameObject.name == "Player"){
             playerMovement.walkSpeed /= coeffSpeed;  // revertss
             playerMovement.moveAccel /= coeffAccel;
