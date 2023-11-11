@@ -42321,15 +42321,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_BackGroundColor.b
-      value: 0.5021805
+      value: 0.6698113
       objectReference: {fileID: 0}
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_BackGroundColor.g
-      value: 0.5360881
+      value: 0.6046371
       objectReference: {fileID: 0}
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_BackGroundColor.r
-      value: 0.5754717
+      value: 0.55922925
       objectReference: {fileID: 0}
     - target: {fileID: 4431924413032929124, guid: 39b161a7313c9674abfb1dae62809cb2, type: 3}
       propertyPath: m_CullingMask.m_Bits
