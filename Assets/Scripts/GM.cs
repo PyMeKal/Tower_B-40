@@ -6,7 +6,7 @@ using UnityEngine.Tilemaps;
 public class GM : MonoBehaviour
 {
     public float physicsSpeedMutlitplier = 1f;
-    public Tilemap standardAStarTilemap;
+    public Tilemap standardAStarTilemap, colliderTilemap;
     
     // Start is called before the first frame update
     void Start()
