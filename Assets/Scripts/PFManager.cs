@@ -165,7 +165,7 @@ public class PFGrid
         return pathList.ToArray();
     }
     
-    public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 999, int wCost = 0, 
+    public Vector3[] GetAStarPath(Vector3 startWorldPos, Vector3 endWorldPos, int maxStep = 500, int wCost = 0, 
         bool preventCornerCutting = false)
     {
         Vector3Int start = GetArrayPositionWorld(startWorldPos);

@@ -468,15 +468,17 @@ public class MimicAI : MonoBehaviour
             pathQueue.Clear();
         
         List<Vector3> path = new List<Vector3>();
-        PFNode nearestNode = PFManager.GetNearestNode(transform.position);
+        var position = transform.position;
+        PFNode nearestNode = PFManager.GetNearestNode(position);
         PFNode nearestDestinationNode = PFManager.GetNearestNode(target);
         // Head straight to target with A* if it's visible and within range
-        float closeEnoughRange = 12f;
-        if (Physics2D.Raycast(transform.position, target - transform.position, closeEnoughRange, wallLayers).collider ==
+        float closeEnoughRange = 20f;
+        float d = Vector2.Distance(position, target - position);
+        if (d <= closeEnoughRange && Physics2D.Raycast(position, target - position, d, wallLayers).collider ==
             null)
         {
             // #0. target visible from current position
-            path = grid.GetAStarPath(transform.position, target).ToList();
+            path = grid.GetAStarPath(position, target, wCost: 0).ToList();
         }
         else if(nearestNode != nearestDestinationNode)
         {
