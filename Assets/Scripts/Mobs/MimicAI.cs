@@ -478,7 +478,7 @@ public class MimicAI : MonoBehaviour
             null)
         {
             // #0. target visible from current position
-            path = grid.GetAStarPath(position, target, wCost: 0).ToList();
+            path = grid.GetAStarPath(position, target, wCost: 3).ToList();
         }
         else if(nearestNode != nearestDestinationNode)
         {
@@ -496,7 +496,7 @@ public class MimicAI : MonoBehaviour
                 Vector3.Distance(transform.position, nodePath[1]))
                 nodePath = nodePath.Skip(1).ToArray();
             
-            path.AddRange(grid.GetAStarPath(transform.position, nodePath[0]));
+            path.AddRange(grid.GetAStarPath(transform.position, nodePath[0], wCost:3));
             
             for (int i = 0; i < nodePath.Length - 1; i++)
             {
@@ -835,5 +835,19 @@ public class MimicAI : MonoBehaviour
     void Die()
     {
         Destroy(gameObject);
+    }
+
+    private void OnDrawGizmos()
+    {
+        var pathQueueCopy = new Queue<Vector3>(pathQueue);
+        if (pathQueueCopy.Count == 0)
+            return;
+        Vector3 prevPoint = pathQueueCopy.Dequeue();
+        for (int i = 0; i < pathQueue.Count-1; i++)
+        {
+            Vector3 thisPoint = pathQueueCopy.Dequeue();
+            Debug.DrawLine(prevPoint, thisPoint);
+            prevPoint = thisPoint;
+        }
     }
 }
