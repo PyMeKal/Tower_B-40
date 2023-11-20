@@ -473,7 +473,7 @@ public class MimicAI : MonoBehaviour
         PFNode nearestDestinationNode = PFManager.GetNearestNode(target);
         // Head straight to target with A* if it's visible and within range
         float closeEnoughRange = 20f;
-        float d = Vector2.Distance(position, target - position);
+        float d = Vector2.Distance(position, target);
         if (d <= closeEnoughRange && Physics2D.Raycast(position, target - position, d, wallLayers).collider ==
             null)
         {
@@ -501,7 +501,7 @@ public class MimicAI : MonoBehaviour
             for (int i = 0; i < nodePath.Length - 1; i++)
             {
                 Vector3[] pathChunk = grid.GetAStarPath(nodePath[i], nodePath[i + 1],
-                    wCost: 10, preventCornerCutting: true);
+                    wCost: 10);
             
                 path.AddRange(pathChunk);
             }

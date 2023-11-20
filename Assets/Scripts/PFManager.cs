@@ -171,31 +171,35 @@ public class PFGrid
         Vector3Int start = GetArrayPositionWorld(startWorldPos);
         Vector3Int end = GetArrayPositionWorld(endWorldPos);
 
+        // Start == End evaluation
         if (start == end)
         {
             // Debug.LogWarning("Start equals end");
             return Array.Empty<Vector3>();
         }
-
-        try
-        {
-            if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
-            {
-                // Debug.LogWarning("Start or end not reachable");
-                return Array.Empty<Vector3>();
-            }
-        }
-        catch
+        
+        // Index range evaluation 
+        if (end.x >= tiles.GetLength(0) || end.y >= tiles.GetLength(1) ||
+            start.x >= tiles.GetLength(0) || start.y >= tiles.GetLength(1))
         {
             Debug.LogWarning($"INDEX RANGE ERROR: {end.x}, {end.y}, {start.x}, {start.y}");
+            return Array.Empty<Vector3>();
         }
         
-            
+        // Start & End position walkable evaluation
+        if (!tiles[end.x, end.y].walkable || !tiles[start.x, start.y].walkable)
+        {
+            // Debug.LogWarning("Start or end not reachable");
+            return Array.Empty<Vector3>();
+        }
+        
+        // ----------------------------------------------------------------------------------------------------
+        
         // Since we're working with arrays of structs, we should store each index for x&y instead of the tile data.
         // -> access PFGrid.tiles directly.
         // might use z for storing f costs. For now, only x and y is used in each Vector3Int.
         List<Vector3Int> openList = new List<Vector3Int>();
-        List<Vector3Int> closedList = new List<Vector3Int>();
+        HashSet<Vector3Int> closedList = new HashSet<Vector3Int>();  // Okay
         
         ResetTiles();
         
@@ -488,6 +492,7 @@ public class PFManager : MonoBehaviour
 {
     public PFGraph pfGraph;
     public Transform graphTransform;
+    public LayerMask wallLayers;
     
     private void Start()
     {
@@ -499,12 +504,17 @@ public class PFManager : MonoBehaviour
         PFNode[] nodes = GM.GetPFManager().pfGraph.nodes;
         PFNode nearestNode = nodes[0];
         float nearestNodeDistSqr = Mathf.Infinity;
+        LayerMask wallLayers = GM.GetPFManager().wallLayers;
+        
         foreach (var node in nodes)
         {
             Vector2 delta = new Vector2(node.position.x - position.x, node.position.y - position.y);
             float dSqr = delta.sqrMagnitude;
             if (dSqr < nearestNodeDistSqr)
             {
+                if(Physics2D.Raycast(position, node.position - (Vector2)position,
+                       delta.magnitude, wallLayers).collider)
+                    continue;
                 nearestNode = node;
                 nearestNodeDistSqr = dSqr;
             }
