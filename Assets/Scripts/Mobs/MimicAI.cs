@@ -101,6 +101,21 @@ public class MimicLeg
     }
 }
 
+[Serializable]
+public class MimicArm
+{
+    public Transform clawTransform, jointTransform;
+    public float clawSpeed;
+    public Vector3 idlePosition;
+    public float clawIdleAngle;
+    public float clawOpenAmount;  // 0 = closed, 1 = fully open
+
+    private LineRenderer line1, line2;  // line1: body to joint, link2: joint to claw
+    
+    
+
+}
+
 public enum MimicState
 {
     Sleep,
@@ -700,7 +715,8 @@ public class MimicAI : MonoBehaviour
     struct MimicChaseState
     {
         public float timeOut;
-        
+
+        public Queue<Vector3> playerPosHistoryQueue;
         public List<Vector3> playerPosHistory;
         public float timeSinceSightExit;
         public Vector3 finalPlayerSighting;
@@ -712,14 +728,22 @@ public class MimicAI : MonoBehaviour
             playerPosHistory = new List<Vector3>(cap);
             for (int i = 0; i < cap; i++)
                 playerPosHistory.Add(playerPos);
+            playerPosHistoryQueue = new Queue<Vector3>(playerPosHistory);
             timeSinceSightExit = 0f;
             finalPlayerSighting = playerPos;
         }
 
-        public void UpdatePlayerPosHistory()
+        public void UpdatePlayerPosHistory(Vector3 playerPosition)
         {
-            playerPosHistory.RemoveAt(0);
-            playerPosHistory.Add(GM.GetPlayerPosition());
+            // playerPosHistory.RemoveAt(0);
+            // playerPosHistory.Add(GM.GetPlayerPosition());
+            playerPosHistoryQueue.Dequeue();
+            playerPosHistoryQueue.Enqueue(playerPosition);
+        }
+        
+        public void UpdatePlayerPosHistoryList()
+        {
+            playerPosHistory = new List<Vector3>(playerPosHistoryQueue);
         }
     }
 
@@ -755,13 +779,20 @@ public class MimicAI : MonoBehaviour
         
         if (playerInSight)
         {
-            chaseState.UpdatePlayerPosHistory();
-            probablePlayerPos = playerTransform.position;
+            var playerPosition = playerTransform.position;
+            chaseState.UpdatePlayerPosHistory(playerPosition);
+            probablePlayerPos = playerPosition;
             chaseState.finalPlayerSighting = probablePlayerPos;
             chaseState.timeSinceSightExit = 0f;
         }
         else
         {
+            if (chaseState.timeSinceSightExit == 0f)
+            {
+                // "Just lost sight of player"
+                chaseState.UpdatePlayerPosHistoryList();
+            }
+            
             chaseState.timeSinceSightExit += Time.fixedDeltaTime;
             if (chaseState.timeSinceSightExit > chaseState.timeOut)
             {

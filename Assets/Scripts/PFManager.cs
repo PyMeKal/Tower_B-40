@@ -2,9 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+[BurstCompile]
 public class PFGrid
 {
     // Class for handling A* pathfinding for various agents.
@@ -309,7 +312,7 @@ public class PFGrid
 }
 
 //--------------------------------------------------------------------------------------------------------------------
-
+[BurstCompile]
 public class PFGraph
 {
     [SerializeField] private Transform graphTransform;

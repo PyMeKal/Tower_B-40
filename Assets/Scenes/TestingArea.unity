@@ -229,7 +229,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 89458672}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -289,7 +289,7 @@ MonoBehaviour:
   index: 0
   adjacentNodeTransforms:
   - {fileID: 162739365}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &106565956
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -510,7 +510,7 @@ MonoBehaviour:
   adjacentNodeTransforms:
   - {fileID: 877345925}
   - {fileID: 1726202361}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &148719284
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -518,7 +518,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 148719281}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -603,7 +603,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 162739364}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -664,7 +664,7 @@ MonoBehaviour:
   adjacentNodeTransforms:
   - {fileID: 89458673}
   - {fileID: 250068499}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &220697132
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1339,7 +1339,7 @@ MonoBehaviour:
   adjacentNodeTransforms:
   - {fileID: 162739365}
   - {fileID: 697895085}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &593895071
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1347,7 +1347,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 593895068}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -1498,7 +1498,7 @@ MonoBehaviour:
   - {fileID: 1891285585}
   - {fileID: 697895085}
   - {fileID: 1851943766}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &682634774
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1506,7 +1506,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 682634771}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -3410,7 +3410,7 @@ MonoBehaviour:
   - {fileID: 593895069}
   - {fileID: 250068499}
   - {fileID: 1891285585}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &697895087
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -3418,7 +3418,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 697895084}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -3503,7 +3503,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 722835672}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -3565,7 +3565,7 @@ MonoBehaviour:
   - {fileID: 1069849945}
   - {fileID: 1204840540}
   - {fileID: 1962328493}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &764172657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3739,7 +3739,7 @@ MonoBehaviour:
   index: 0
   adjacentNodeTransforms:
   - {fileID: 1629501028}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &877345927
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -3747,7 +3747,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 877345924}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4336,7 +4336,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1069849944}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4398,7 +4398,7 @@ MonoBehaviour:
   - {fileID: 722835673}
   - {fileID: 1851943766}
   - {fileID: 1426104052}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1114100847
 GameObject:
   m_ObjectHideFlags: 0
@@ -4523,7 +4523,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1120809924}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4585,7 +4585,7 @@ MonoBehaviour:
   - {fileID: 1880532110}
   - {fileID: 1426104052}
   - {fileID: 1127128056}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &1123332741
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4683,7 +4683,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1127128055}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4745,7 +4745,7 @@ MonoBehaviour:
   - {fileID: 1726202361}
   - {fileID: 1860791134}
   - {fileID: 1120809925}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &1146624740
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4851,7 +4851,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1204840539}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4914,7 +4914,7 @@ MonoBehaviour:
   - {fileID: 1880532110}
   - {fileID: 1426104052}
   - {fileID: 1595545985}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &1220835804
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5187,7 +5187,7 @@ MonoBehaviour:
   - {fileID: 162739365}
   - {fileID: 593895069}
   - {fileID: 89458673}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &1362289671
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5195,7 +5195,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1362289668}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20076,7 +20076,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1426104051}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20138,7 +20138,7 @@ MonoBehaviour:
   - {fileID: 1120809925}
   - {fileID: 1069849945}
   - {fileID: 1204840540}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1458239468
 GameObject:
   m_ObjectHideFlags: 0
@@ -20329,7 +20329,7 @@ MonoBehaviour:
   - {fileID: 1204840540}
   - {fileID: 1880532110}
   - {fileID: 722835673}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &1595545987
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -20337,7 +20337,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1595545984}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20436,7 +20436,7 @@ MonoBehaviour:
   adjacentNodeTransforms:
   - {fileID: 1880532110}
   - {fileID: 1595545985}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!212 &1629501030
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -20444,7 +20444,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1629501027}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20529,7 +20529,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1726202360}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20589,7 +20589,7 @@ MonoBehaviour:
   index: 0
   adjacentNodeTransforms:
   - {fileID: 1127128056}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1837369593
 GameObject:
   m_ObjectHideFlags: 0
@@ -20817,7 +20817,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1851943765}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20879,7 +20879,7 @@ MonoBehaviour:
   - {fileID: 1069849945}
   - {fileID: 1891285585}
   - {fileID: 1962328493}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1860791133
 GameObject:
   m_ObjectHideFlags: 0
@@ -20920,7 +20920,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1860791133}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -20982,7 +20982,7 @@ MonoBehaviour:
   - {fileID: 1127128056}
   - {fileID: 1726202361}
   - {fileID: 148719282}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1875099473
 GameObject:
   m_ObjectHideFlags: 0
@@ -21023,7 +21023,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1875099473}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -21084,7 +21084,7 @@ MonoBehaviour:
   adjacentNodeTransforms:
   - {fileID: 250068499}
   - {fileID: 1962328493}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1880532109
 GameObject:
   m_ObjectHideFlags: 0
@@ -21125,7 +21125,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1880532109}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -21188,7 +21188,7 @@ MonoBehaviour:
   - {fileID: 1204840540}
   - {fileID: 1595545985}
   - {fileID: 1127128056}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1 &1891285584
 GameObject:
   m_ObjectHideFlags: 0
@@ -21229,7 +21229,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1891285584}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -21292,7 +21292,7 @@ MonoBehaviour:
   - {fileID: 1962328493}
   - {fileID: 1851943766}
   - {fileID: 697895085}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!1001 &1944412103
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47099,7 +47099,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1962328492}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -47161,7 +47161,7 @@ MonoBehaviour:
   - {fileID: 1891285585}
   - {fileID: 1875099474}
   - {fileID: 722835673}
-  drawDebugLines: 1
+  drawDebugLines: 0
 --- !u!4 &1968657786 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7320541560527462672, guid: 1b4ddc22c30639b4aa1801c5929e5a27, type: 3}
@@ -47509,7 +47509,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 630046436242190402, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5369380534423347031, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: m_Name
@@ -47560,8 +47560,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9117043887901351064, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
-      propertyPath: drawDebugLines
+      propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117043887901351064, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
+      propertyPath: drawDebugLines
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9117043887901351064, guid: d52dac2410fe0c144892ba58669f5aea, type: 3}
       propertyPath: adjacentNodeTransforms.Array.data[0]
@@ -47639,8 +47643,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4765354152505107203, guid: 6a44b09e8a3c0a946a05b930cf6f75f3, type: 3}
+      insertIndex: 4
+      addedObject: {fileID: 5324675060471480036}
   m_SourcePrefab: {fileID: 100100000, guid: 6a44b09e8a3c0a946a05b930cf6f75f3, type: 3}
+--- !u!1 &5324675060471480035 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4765354152505107203, guid: 6a44b09e8a3c0a946a05b930cf6f75f3, type: 3}
+  m_PrefabInstance: {fileID: 5324675060471480034}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5324675060471480036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5324675060471480035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1a318ca021203a488f9f494d05819bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  health: 100
 --- !u!1001 &5537378903984221915
 PrefabInstance:
   m_ObjectHideFlags: 0
