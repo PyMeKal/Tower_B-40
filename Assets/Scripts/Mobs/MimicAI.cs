@@ -101,20 +101,6 @@ public class MimicLeg
     }
 }
 
-[Serializable]
-public class MimicArm
-{
-    public Transform clawTransform, jointTransform;
-    public float clawSpeed;
-    public Vector3 idlePosition;
-    public float clawIdleAngle;
-    public float clawOpenAmount;  // 0 = closed, 1 = fully open
-
-    private LineRenderer line1, line2;  // line1: body to joint, link2: joint to claw
-    
-    
-
-}
 
 public enum MimicState
 {
