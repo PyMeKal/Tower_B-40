@@ -123,6 +123,8 @@ public class MimicAI : MonoBehaviour
     private PFManager pfManager;
     private Transform playerTransform;
 
+    public bool FacingRight { get; private set; }
+
     public Transform gizmo;
 
     [Header("Head")]
@@ -137,7 +139,7 @@ public class MimicAI : MonoBehaviour
     [SerializeField][Range(0f, 1f)] private float smallLegChance;
     [SerializeField][Tooltip("Random.Range(-nSA, +nSA) for X&Y")] private float legSpawnArea;
     [SerializeField] private float smallLegForce, legForce;
-    [SerializeField] private LayerMask wallLayers;
+    public LayerMask wallLayers;
 
     [Header("\nAI")] 
     public PFGrid grid;
@@ -290,8 +292,9 @@ public class MimicAI : MonoBehaviour
         Vector3 headTargetPos = (headLookAt - transform.position).normalized * neck;
 
         head.localPosition = Vector3.Lerp(head.localPosition, headTargetPos, headSpeed);
-        
-        headSprite.flipX = !(headLookAt.x > head.position.x);
+
+        FacingRight = headLookAt.x > head.position.x;
+        headSprite.flipX = !FacingRight;
     }
 
     void EyeBehaviour()
@@ -854,6 +857,7 @@ public class MimicAI : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /*
     private void OnDrawGizmos()
     {
         var pathQueueCopy = new Queue<Vector3>(pathQueue);
@@ -867,4 +871,5 @@ public class MimicAI : MonoBehaviour
             prevPoint = thisPoint;
         }
     }
+    */
 }
