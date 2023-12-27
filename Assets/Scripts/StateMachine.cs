@@ -21,6 +21,7 @@ public class StateMachine {
             currentState.Exit();
 
         currentState = newState;
+        Debug.Log("Updated State");
         currentState.Enter();
     }
 
@@ -28,6 +29,7 @@ public class StateMachine {
     {
         if (currentState != newState)
         {
+            Debug.Log("Updated State");
             currentState.Exit();
             currentState = newState;
             currentState.Enter();

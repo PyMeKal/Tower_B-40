@@ -157,7 +157,7 @@ public class MimicAI : MonoBehaviour
     private Queue<Vector3> pathQueue;
     
     [SerializeField] private LayerMask sensorLayers;
-    private bool playerInSight;
+    public bool PlayerInSight { get; private set; }
     public Vector3 ProbablePlayerPos { get; private set; }
 
     void CreateLegs(int n)
@@ -202,7 +202,6 @@ public class MimicAI : MonoBehaviour
         pfManager = GM.GetPFManager();
         grid = new ("mimic", GM.GetGM().standardAStarTilemap);
         CreateLegs(numLegs);
-        state = MimicState.Idle;
         playerTransform = GM.GetPlayer().transform;
         pathQueue = new Queue<Vector3>();
         SetLegTargetsStay();
@@ -225,12 +224,12 @@ public class MimicAI : MonoBehaviour
         EyeBehaviour();
         LegsBehaviour();
 
-        // gizmo.position = ProbablePlayerPos;
+        gizmo.position = destination;
     }
 
     void PlayerSightEnter()
     {
-        playerInSight = true;
+        PlayerInSight = true;
         ProbablePlayerPos = playerTransform.position;
         
         // Change STATE to Chase
@@ -239,7 +238,7 @@ public class MimicAI : MonoBehaviour
 
     void PlayerSightExit()
     {
-        playerInSight = false;
+        PlayerInSight = false;
     }
     
     void Sight()
@@ -262,15 +261,15 @@ public class MimicAI : MonoBehaviour
         // print(theta);
         if (dist > maxDist || hit.collider != null) // theta >= maxTheta ||  
         {
-            if (playerInSight)
+            if (PlayerInSight)
             {
-                playerInSight = false;
+                PlayerInSight = false;
                 PlayerSightExit();
             }
         }
-        else if(!playerInSight)
+        else if(!PlayerInSight)
         {
-            playerInSight = true;
+            PlayerInSight = true;
             PlayerSightEnter();
         }
     }
@@ -278,7 +277,7 @@ public class MimicAI : MonoBehaviour
     void HeadBehaviour()
     {
         Vector3 headLookAt;
-        if (playerInSight)
+        if (PlayerInSight)
             headLookAt = ProbablePlayerPos;
         else if (!pathQueue.TryPeek(out headLookAt))
             headLookAt = destination;
@@ -301,7 +300,11 @@ public class MimicAI : MonoBehaviour
         Vector3 distanceScale = new Vector3(0.15f, 0.2f);
         Vector3 offset = new Vector3(0, 0);
 
-        Vector3 eyeLookAt = destination;
+        Vector3 eyeLookAt;
+        if (PlayerInSight)
+            eyeLookAt = ProbablePlayerPos;
+        else if (!pathQueue.TryPeek(out eyeLookAt))
+            eyeLookAt = destination;
         Vector3 eyeTargetPosRaw = (eyeLookAt - head.position).normalized;
         
         // Applied distanceScale & offset
@@ -779,13 +782,21 @@ public class MimicAI : MonoBehaviour
             }
         
         
-            if (ai.playerInSight)
+            if (ai.PlayerInSight)
             {
                 var playerPosition = ai.playerTransform.position;
                 UpdatePlayerPosHistory(playerPosition);
                 ai.ProbablePlayerPos = playerPosition;
                 finalPlayerSighting = playerPosition;
                 timeSinceSightExit = 0f;
+
+                float attackDistance = 3.5f;
+                ai.destination = playerPosition + (ai.transform.position - playerPosition).normalized * attackDistance;
+                ai.destination.y = playerPosition.y + 0.5f;
+                if(Vector3.Distance(ai.destination, ai.transform.position) < 1f)
+                    ai.SetLegTargetsStay();
+                else
+                    ai.MoveToDestination(ai.destination);
             }
             else
             {
@@ -801,11 +812,12 @@ public class MimicAI : MonoBehaviour
                     ai.stateMachine.ChangeState(ai.searchState);
                 }
                 ai.ProbablePlayerPos = GuessPlayerPosition();
+                ai.destination = ai.ProbablePlayerPos;
+        
+                ai.MoveToDestination(ai.destination);
             }
         
-            ai.destination = ai.ProbablePlayerPos;
-        
-            ai.MoveToDestination(ai.destination);
+            
         }
 
         public void Exit() {}
@@ -868,6 +880,7 @@ public class MimicAI : MonoBehaviour
         MoveToDestination(destination);
     }*/
 
+    // Converted to use StateMachines by GPT-4.
     public class SearchState : IState
     {
         private MimicAI ai;

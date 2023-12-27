@@ -22,6 +22,7 @@ public class MimicArm : MonoBehaviour
     private MimicAI mimicAI;
     
     public Transform clawTransform, jointTransform;
+    public Transform claw1, claw2;
     public Vector3 clawTargetPosition;
     public float clawTargetAngle;
     public float clawSpeed;
@@ -42,15 +43,17 @@ public class MimicArm : MonoBehaviour
         state = MimicArmState.Idle;
 
         idleState = new IdleState(this, idlePosition, clawIdleAngle, clawSpeed);
-        attackState = new AttackState(arm: this, charge: 1f, damage: 30f, snapSpeed: clawSpeed * 3f, snapDuration: 1.5f, 
-            chargeClawPosition: idlePosition * 0.75f, clawTargetAngle: clawTargetAngle, chargeClawSpeed: clawSpeed * 2f);
+        attackState = new AttackState(arm: this, charge: 1.5f, damage: 30f, snapSpeed: clawSpeed * 3f, snapDuration: 1.5f, 
+            chargeClawPosition: idlePosition * 0.75f, chargeClawSpeed: clawSpeed * 2f);
         stateMachine = new StateMachine();
         stateMachine.ChangeState(idleState);
+        
+        SetClawOpenAmount(1f);
     }
 
     void DetermineState()
     {
-        if (Vector2.Distance(mimicAI.ProbablePlayerPos, transform.position) <= limbLength * 2f)
+        if (Vector2.Distance(mimicAI.ProbablePlayerPos, transform.position) <= limbLength * 2f && mimicAI.PlayerInSight)
         {
             print("Attack State");
             stateMachine.ChangeStateIfNot(attackState);
@@ -60,6 +63,12 @@ public class MimicArm : MonoBehaviour
             print("Idle State");
             stateMachine.ChangeStateIfNot(idleState);
         }
+    }
+
+    void SetClawOpenAmount(float amount)
+    {
+        claw1.localPosition = new Vector3(0f, amount * 0.5f + (1 - amount) * 0.25f);
+        claw2.localPosition = new Vector3(0f, -amount * 0.5f + -(1 - amount) * 0.25f);
     }
     
     void FixedUpdate()
@@ -186,7 +195,7 @@ public class MimicArm : MonoBehaviour
         private float chargeClawSpeed;
         
         public AttackState(MimicArm arm, float charge, float damage, float snapSpeed, float snapDuration,
-            Vector3 chargeClawPosition, float clawTargetAngle, float chargeClawSpeed)
+            Vector3 chargeClawPosition, float chargeClawSpeed)
         {
             this.arm = arm;
             ai = arm.GetComponent<MimicAI>();
@@ -197,7 +206,6 @@ public class MimicArm : MonoBehaviour
             this.snapDuration = snapDuration;
             snapTimer = snapDuration;
             this.chargeClawPosition = chargeClawPosition;
-            this.clawTargetAngle = clawTargetAngle;
             this.chargeClawSpeed = chargeClawSpeed;
         }
 
@@ -210,6 +218,7 @@ public class MimicArm : MonoBehaviour
 
         private void ChargeUpdate()
         {
+            arm.SetClawOpenAmount(1f);
             Vector3 currentClawTargetPosition = arm.mimicAI.FacingRight ? chargeClawPosition : new Vector3(-chargeClawPosition.x, chargeClawPosition.y);
 
             var position = arm.transform.position;
@@ -220,25 +229,25 @@ public class MimicArm : MonoBehaviour
                 currentClawTargetPosition = clawPositionRay.point - (Vector2)position;
             
             arm.clawTargetPosition = currentClawTargetPosition;
-            arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
+            arm.clawTargetAngle = Mathf.Atan2((playerPos - position).y, (playerPos - position).x);
             
             chargeTimer -= Time.fixedDeltaTime;
             if (chargeTimer <= 0f)
             {
-                chargeTimer = charge;
+                arm.clawTargetPosition = playerPos - arm.transform.position;
                 arm.SetClawSpeed(snapSpeed);
             }
         }
 
         private void SnapUpdate()
         {
-            arm.clawTargetPosition = playerPos - arm.transform.position;
             // arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
-            
+            arm.SetClawOpenAmount(0f);
             snapTimer -= Time.fixedDeltaTime;
             if (snapTimer <= 0f)
             {
                 snapTimer = snapDuration;
+                chargeTimer = charge;
                 arm.SetClawSpeed(chargeClawSpeed);
             }
         }
@@ -259,7 +268,7 @@ public class MimicArm : MonoBehaviour
 
         public void Exit()
         {
-            
+            arm.SetClawOpenAmount(1f);
         }
     }
 }
