@@ -15,7 +15,8 @@ public class MimicArm : MonoBehaviour
         Aim,
         Strike,
     }
-
+    
+    
     public MimicArmState state;
     public StateMachine stateMachine;
     private MimicAI mimicAI;
@@ -31,27 +32,49 @@ public class MimicArm : MonoBehaviour
     [SerializeField] private LineRenderer line1, line2;  // line1: body to joint, link2: joint to claw
 
     public float limbLength;  // Length of limb
-    
-    
+
+    private IdleState idleState;
+    private AttackState attackState;
     void Start()
     {
         mimicAI = GetComponent<MimicAI>();
         
         state = MimicArmState.Idle;
 
-        IdleState idleState = new IdleState(this, idlePosition, clawIdleAngle, clawSpeed);
+        idleState = new IdleState(this, idlePosition, clawIdleAngle, clawSpeed);
+        attackState = new AttackState(arm: this, charge: 1f, damage: 30f, snapSpeed: clawSpeed * 3f, snapDuration: 1.5f, 
+            chargeClawPosition: idlePosition * 0.75f, clawTargetAngle: clawTargetAngle, chargeClawSpeed: clawSpeed * 2f);
         stateMachine = new StateMachine();
         stateMachine.ChangeState(idleState);
     }
 
+    void DetermineState()
+    {
+        if (Vector2.Distance(mimicAI.ProbablePlayerPos, transform.position) <= limbLength * 2f)
+        {
+            print("Attack State");
+            stateMachine.ChangeStateIfNot(attackState);
+        }
+        else
+        {
+            print("Idle State");
+            stateMachine.ChangeStateIfNot(idleState);
+        }
+    }
     
     void FixedUpdate()
     {
+        DetermineState();
         stateMachine.Update();
         ArmPhysicsBehaviour();
         UpdateLineRenderers();
     }
 
+    void SetClawSpeed(float speed)
+    {
+        clawSpeed = speed;
+    }
+    
     void ArmPhysicsBehaviour()
     {
         Vector3 GetJointPosition(Vector3 clawLocalPosition, bool facingRight)
@@ -123,7 +146,7 @@ public class MimicArm : MonoBehaviour
         
         public void Enter()
         {
-            
+            arm.SetClawSpeed(idleClawSpeed);
         }
 
         public void Update()
@@ -139,6 +162,99 @@ public class MimicArm : MonoBehaviour
             
             arm.clawTargetPosition = currentClawTargetPosition;
             arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
+        }
+
+        public void Exit()
+        {
+            
+        }
+    }
+
+    private class AttackState : IState
+    {
+        private MimicArm arm;
+        private MimicAI ai;
+        private float charge, chargeTimer;
+        private float damage;
+        private float snapSpeed;
+        private float snapDuration, snapTimer;
+
+        private Vector3 playerPos;
+        
+        private readonly Vector3 chargeClawPosition;
+        private readonly float clawTargetAngle;
+        private float chargeClawSpeed;
+        
+        public AttackState(MimicArm arm, float charge, float damage, float snapSpeed, float snapDuration,
+            Vector3 chargeClawPosition, float clawTargetAngle, float chargeClawSpeed)
+        {
+            this.arm = arm;
+            ai = arm.GetComponent<MimicAI>();
+            this.charge = charge;
+            chargeTimer = charge;
+            this.damage = damage;
+            this.snapSpeed = snapSpeed;
+            this.snapDuration = snapDuration;
+            snapTimer = snapDuration;
+            this.chargeClawPosition = chargeClawPosition;
+            this.clawTargetAngle = clawTargetAngle;
+            this.chargeClawSpeed = chargeClawSpeed;
+        }
+
+        public void Enter()
+        {
+            chargeTimer = charge;
+            snapTimer = snapDuration;
+            arm.SetClawSpeed(chargeClawSpeed);
+        }
+
+        private void ChargeUpdate()
+        {
+            Vector3 currentClawTargetPosition = arm.mimicAI.FacingRight ? chargeClawPosition : new Vector3(-chargeClawPosition.x, chargeClawPosition.y);
+
+            var position = arm.transform.position;
+            RaycastHit2D clawPositionRay = Physics2D.Raycast(position, currentClawTargetPosition,
+                currentClawTargetPosition.magnitude, arm.mimicAI.wallLayers);
+
+            if (clawPositionRay)
+                currentClawTargetPosition = clawPositionRay.point - (Vector2)position;
+            
+            arm.clawTargetPosition = currentClawTargetPosition;
+            arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
+            
+            chargeTimer -= Time.fixedDeltaTime;
+            if (chargeTimer <= 0f)
+            {
+                chargeTimer = charge;
+                arm.SetClawSpeed(snapSpeed);
+            }
+        }
+
+        private void SnapUpdate()
+        {
+            arm.clawTargetPosition = playerPos - arm.transform.position;
+            // arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
+            
+            snapTimer -= Time.fixedDeltaTime;
+            if (snapTimer <= 0f)
+            {
+                snapTimer = snapDuration;
+                arm.SetClawSpeed(chargeClawSpeed);
+            }
+        }
+        
+        public void Update()
+        {
+            playerPos = ai.ProbablePlayerPos;
+            if (chargeTimer >= 0f)
+            {
+                // #1. Charge State
+                ChargeUpdate();
+                return;
+            }
+            
+            // #2. Snap (Attack motion)
+            SnapUpdate();
         }
 
         public void Exit()

@@ -144,13 +144,21 @@ public class MimicAI : MonoBehaviour
     [Header("\nAI")] 
     public PFGrid grid;
     public MimicState state;
+    public StateMachine stateMachine = new StateMachine();
+
+    public IdleState idleState;
+    public ChaseState chaseState;
+
+    public SearchState searchState;
+
+
     public Vector3 destination;
     private Vector3 target;
     private Queue<Vector3> pathQueue;
     
     [SerializeField] private LayerMask sensorLayers;
     private bool playerInSight;
-    private Vector3 probablePlayerPos;
+    public Vector3 ProbablePlayerPos { get; private set; }
 
     void CreateLegs(int n)
     {
@@ -200,26 +208,16 @@ public class MimicAI : MonoBehaviour
         SetLegTargetsStay();
 
         moveVars.Reset();
-        idleState.Reset();
-        chaseState.Reset();
+        
+        idleState = new IdleState(this, 3f, 1f, 5f, true);
+        chaseState = new ChaseState(this, 5f);
+        searchState = new SearchState(this);
+        stateMachine.ChangeState(idleState);
     }
 
     void FixedUpdate()
     {
-        switch (state)
-        {
-            case MimicState.Sleep:
-                break;
-            case MimicState.Idle:
-                STATE_Idle();
-                break;
-            case MimicState.Search:
-                STATE_Search();
-                break;
-            case MimicState.Chase:
-                STATE_Chase();
-                break;
-        }
+        stateMachine.Update();
         
         Sight();
         
@@ -227,16 +225,16 @@ public class MimicAI : MonoBehaviour
         EyeBehaviour();
         LegsBehaviour();
 
-        // gizmo.position = probablePlayerPos;
+        // gizmo.position = ProbablePlayerPos;
     }
 
     void PlayerSightEnter()
     {
         playerInSight = true;
-        probablePlayerPos = playerTransform.position;
+        ProbablePlayerPos = playerTransform.position;
         
         // Change STATE to Chase
-        EnterChaseState();
+        stateMachine.ChangeState(chaseState);
     }
 
     void PlayerSightExit()
@@ -281,7 +279,7 @@ public class MimicAI : MonoBehaviour
     {
         Vector3 headLookAt;
         if (playerInSight)
-            headLookAt = probablePlayerPos;
+            headLookAt = ProbablePlayerPos;
         else if (!pathQueue.TryPeek(out headLookAt))
             headLookAt = destination;
 
@@ -612,19 +610,34 @@ public class MimicAI : MonoBehaviour
         return Vector3.Distance(thisDestination, transform.position);
     }
     // ------------------------------------------------------------------------------------------------
-    // Preserved variables for STATE: Idle
-    [System.Serializable]
-    public struct MimicIdleState
+    [Serializable]
+    public class IdleState : IState
     {
+        private MimicAI ai;
         public float stasisClockMax, stasisClockMin;
-        [HideInInspector] public float stasisClock;
+        private float stasisClock;
         public float timeOut;
-        [HideInInspector] public float timeOutTimer;
+        private float timeOutTimer;
 
-        [HideInInspector] public Vector3 currentDestination;
+        private Vector3 currentDestination;
 
-        public bool isStatic;
+        private bool isStatic;
 
+        public IdleState(MimicAI ai, float stasisClockMax, float stasisClockMin, float timeOut, bool isStatic)
+        {
+            this.ai = ai;
+            this.stasisClockMax = stasisClockMax;
+            this.stasisClockMin = stasisClockMin;
+            this.timeOut = timeOut;
+            this.isStatic = isStatic;
+        }
+
+        public void Enter()
+        {
+            Reset();
+            ai.state = MimicState.Idle;
+        }
+        
         public void Reset()
         {
             stasisClock = Random.Range(stasisClockMin, stasisClockMax);
@@ -632,18 +645,7 @@ public class MimicAI : MonoBehaviour
             currentDestination = Vector3.zero;
             isStatic = false;
         }
-    }
-
-    void EnterIdleState()
-    {
-        idleState.Reset();
-        state = MimicState.Idle;
-    }
-    
-    [SerializeField] private MimicIdleState idleState;
-    
-    public void STATE_Idle()
-    {
+        
         Vector3 GetRandomDestination()
         {
             float pi = Mathf.PI;
@@ -656,60 +658,75 @@ public class MimicAI : MonoBehaviour
             {
                 float angle = Random.Range(-pi / 3, pi / 3) + (Random.value >= 0.5f ? 1f : 0f) * pi;
                 Vector3 dir = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle));
-                RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, rayLength, wallLayers);
+                RaycastHit2D hit = Physics2D.Raycast(ai.transform.position, dir, rayLength, ai.wallLayers);
                 
                 candidates[i] += hit.collider != null
-                    ? hit.point + ((Vector2)transform.position - hit.point).normalized * 1f
+                    ? hit.point + ((Vector2)ai.transform.position - hit.point).normalized * 1f
                     : (Vector3)hit.point;
             }
     
             return candidates[Random.Range(0, rayCount)];
         }
-        
-        if (idleState is { stasisClock: > 0f, isStatic: false })   // WHAT
+
+        public void Update()
         {
-            stasisPosition = transform.position;
-            SetLegTargetsStay();
-            idleState.isStatic = true;
-        }
-        else if (idleState is { stasisClock: <= 0f, isStatic: true })
-        {
-            idleState.isStatic = false;
-            idleState.currentDestination = GetRandomDestination();
-            destination = idleState.currentDestination;
-        }
-        else if (idleState is { stasisClock: <= 0f, isStatic: false })
-        {
-            float dist = MoveToDestination(idleState.currentDestination);
-            if (dist <= 2f)
+            if (stasisClock > 0f && !isStatic)
             {
-                idleState.stasisClock = Random.Range(idleState.stasisClockMin, idleState.stasisClockMax);
+                ai.stasisPosition = ai.transform.position;
+                ai.SetLegTargetsStay();
+                isStatic = true;
+            }
+            else if (stasisClock <= 0f && isStatic)
+            {
+                isStatic = false;
+                currentDestination = GetRandomDestination();
+                ai.destination = currentDestination;
+            }
+            else if (stasisClock <= 0f && !isStatic)
+            {
+                float dist = ai.MoveToDestination(currentDestination);
+                if (dist <= 2f)
+                {
+                    stasisClock = Random.Range(stasisClockMin, stasisClockMax);
+                }
+            }
+            else
+            {
+                stasisClock -= Time.fixedDeltaTime;
+            }
+
+            timeOutTimer -= Time.fixedDeltaTime;
+            if (timeOutTimer <= 0f && !isStatic)
+            {
+                Reset();
             }
         }
-        else
-        {
-            idleState.stasisClock -= Time.fixedDeltaTime;
-        }
-
-        idleState.timeOutTimer -= Time.fixedDeltaTime;
-        if (idleState is { timeOutTimer: <= 0f, isStatic: false })
-        {
-            idleState.Reset();
-        }
+        
+        public void Exit() {}
     }
     
     // ------------------------------------------------------------------------------------------------
     // Chase
     [System.Serializable]
-    struct MimicChaseState
+
+    public class ChaseState : IState
     {
+        private MimicAI ai;
+        
         public float timeOut;
 
         public Queue<Vector3> playerPosHistoryQueue;
         public List<Vector3> playerPosHistory;
         public float timeSinceSightExit;
         public Vector3 finalPlayerSighting;
-        
+
+        public ChaseState(MimicAI ai, float timeOut)
+        {
+            this.ai = ai;
+            this.timeOut = timeOut;
+            ai.state = MimicState.Chase;
+        }
+
         public void Reset()
         {
             var playerPos = GM.GetPlayerPosition();
@@ -734,70 +751,69 @@ public class MimicAI : MonoBehaviour
         {
             playerPosHistory = new List<Vector3>(playerPosHistoryQueue);
         }
-    }
 
-    void EnterChaseState()
-    {
-        chaseState.Reset();
-        state = MimicState.Chase;
-    }
-    
-    [SerializeField] private MimicChaseState chaseState;
-    
-    void STATE_Chase()
-    {
-        Vector3 GuessPlayerPosition()
+        public void Enter()
         {
-            Vector3 generalDir = chaseState.playerPosHistory.Last() - chaseState.playerPosHistory.First();
-            float t = chaseState.timeSinceSightExit;
-            float fadeT = Mathf.Sqrt(t+1) - 1f;
-            float velocityCoeff = 2f;
-            
-            Vector3 v = generalDir / (Time.fixedDeltaTime * chaseState.playerPosHistory.Count);
+            Reset();
+        }
 
-            RaycastHit2D hit = Physics2D.Raycast(chaseState.finalPlayerSighting, generalDir, 
-                velocityCoeff * fadeT * v.magnitude, wallLayers);
-            if (hit.collider == null)
-            {
-                return velocityCoeff * fadeT * v + chaseState.finalPlayerSighting;
-            }
-            
-            return hit.point + ((Vector2)transform.position - hit.point).normalized * 0.25f;
-        }
-        
-        
-        if (playerInSight)
+        public void Update()
         {
-            var playerPosition = playerTransform.position;
-            chaseState.UpdatePlayerPosHistory(playerPosition);
-            probablePlayerPos = playerPosition;
-            chaseState.finalPlayerSighting = probablePlayerPos;
-            chaseState.timeSinceSightExit = 0f;
-        }
-        else
-        {
-            if (chaseState.timeSinceSightExit == 0f)
+            Vector3 GuessPlayerPosition()
             {
-                // "Just lost sight of player"
-                chaseState.UpdatePlayerPosHistoryList();
-            }
+                Vector3 generalDir = playerPosHistory.Last() - playerPosHistory.First();
+                float t = timeSinceSightExit;
+                float fadeT = Mathf.Sqrt(t+1) - 1f;
+                float velocityCoeff = 2f;
             
-            chaseState.timeSinceSightExit += Time.fixedDeltaTime;
-            if (chaseState.timeSinceSightExit > chaseState.timeOut)
-            {
-                EnterSearchState();
+                Vector3 v = generalDir / (Time.fixedDeltaTime * playerPosHistory.Count);
+
+                RaycastHit2D hit = Physics2D.Raycast(finalPlayerSighting, generalDir, 
+                    velocityCoeff * fadeT * v.magnitude, ai.wallLayers);
+                if (hit.collider == null)
+                {
+                    return velocityCoeff * fadeT * v + finalPlayerSighting;
+                }
+            
+                return hit.point + ((Vector2)ai.transform.position - hit.point).normalized * 0.25f;
             }
-            probablePlayerPos = GuessPlayerPosition();
+        
+        
+            if (ai.playerInSight)
+            {
+                var playerPosition = ai.playerTransform.position;
+                UpdatePlayerPosHistory(playerPosition);
+                ai.ProbablePlayerPos = playerPosition;
+                finalPlayerSighting = playerPosition;
+                timeSinceSightExit = 0f;
+            }
+            else
+            {
+                if (timeSinceSightExit == 0f)
+                {
+                    // "Just lost sight of player"
+                    UpdatePlayerPosHistoryList();
+                }
+            
+                timeSinceSightExit += Time.fixedDeltaTime;
+                if (timeSinceSightExit > timeOut)
+                {
+                    ai.stateMachine.ChangeState(ai.searchState);
+                }
+                ai.ProbablePlayerPos = GuessPlayerPosition();
+            }
+        
+            ai.destination = ai.ProbablePlayerPos;
+        
+            ai.MoveToDestination(ai.destination);
         }
-        
-        destination = probablePlayerPos;
-        
-        MoveToDestination(destination);
+
+        public void Exit() {}
     }
     
     // ------------------------------------------------------------------------------------------------
     // Search
-
+    /*
     [System.Serializable]
     public struct MimicStateSearch
     {
@@ -848,10 +864,61 @@ public class MimicAI : MonoBehaviour
         }
 
         destination = searchState.nextNode.position;
-        probablePlayerPos = searchState.nextNode.position;
+        ProbablePlayerPos = searchState.nextNode.position;
         MoveToDestination(destination);
+    }*/
+
+    public class SearchState : IState
+    {
+        private MimicAI ai;
+        private PFNode currentNode;
+        private PFNode nextNode;
+        private List<PFNode> searchedNodes;
+
+        public SearchState(MimicAI ai)
+        {
+            this.ai = ai;
+        }
+
+        public void Enter()
+        {
+            Reset();
+            ai.state = MimicState.Search;
+        }
+
+        private void Reset()
+        {
+            currentNode = PFManager.GetNearestNode(ai.transform.position);
+            nextNode = currentNode.adjacentNodes[Random.Range(0, currentNode.adjacentNodes.Length)];
+            searchedNodes = new List<PFNode>();
+        }
+
+        public void Update()
+        {
+            float distToNextNode = Vector3.Distance(ai.transform.position, nextNode.position);
+            float distThresh = 1.5f;
+
+            if (distToNextNode <= distThresh)
+            {
+                searchedNodes.Add(currentNode);
+                currentNode = nextNode;
+                PFNode[] availableNodes = currentNode.adjacentNodes
+                    .Where(n => !searchedNodes.Contains(n)).ToArray();
+
+                nextNode = availableNodes.Length > 0
+                    ? availableNodes[Random.Range(0, availableNodes.Length)]
+                    : currentNode; // Handle case where all nodes are searched
+            }
+
+            ai.destination = nextNode.position;
+            ai.ProbablePlayerPos = nextNode.position;
+            ai.MoveToDestination(ai.destination);
+        }
+
+        public void Exit() {}
     }
 
+    
     void Die()
     {
         Destroy(gameObject);

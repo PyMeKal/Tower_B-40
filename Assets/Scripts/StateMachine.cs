@@ -24,6 +24,16 @@ public class StateMachine {
         currentState.Enter();
     }
 
+    public void ChangeStateIfNot(IState newState)
+    {
+        if (currentState != newState)
+        {
+            currentState.Exit();
+            currentState = newState;
+            currentState.Enter();
+        }
+    }
+
     public void Update() {
         if (currentState != null)
             currentState.Update();
