@@ -8,7 +8,7 @@ public class MobStats
 {
     public string id;
     public float health;
-    public Action deathAction;
+    public Action deathAction, takeDamageAction;
 
     public MobStats(string id, float health)
     {
@@ -23,6 +23,8 @@ public class MobStats
         {
             Die();
         }
+
+        takeDamageAction();
     }
 
     public void Die()

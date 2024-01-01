@@ -16,6 +16,7 @@ public class PlayerWing
     
     
     public readonly int id;
+    public float damage;
     public PlayerWingState state;
     public int inputMouseButton;
     private Material material;
@@ -51,11 +52,14 @@ public class PlayerWing
     private Vector3 mousePosition;
     public TrailRenderer trailRenderer;
 
-    public PlayerWing(int id, GameObject meshObject, Material material, Material cooldownMaterial, Vector3 idlePosition, float speed, float range, float travelDistanceCoeff, float cooldown, LayerMask collisionLayers)
+    public PlayerWing(int id, float damage, GameObject meshObject, Material material, Material cooldownMaterial, Vector3 idlePosition,
+        float speed, float range, float travelDistanceCoeff, float cooldown, LayerMask collisionLayers)
     {
         this.id = id;
         this.state = PlayerWingState.idle;
 
+        this.damage = damage;
+        
         this.meshObject = meshObject;
         
         this.material = material;
@@ -274,7 +278,7 @@ public class PlayerWing
         mobStatsInterface = targetObj.GetComponent<MobStatsInterface>();
         if (mobStatsInterface != null)
         {
-            mobStatsInterface.stats.TakeDamage(10f);
+            mobStatsInterface.stats.TakeDamage(damage);
             coolingDown = true;
             state = PlayerWingState.cooldown;
         }
@@ -330,15 +334,15 @@ public class PlayerWingsBehaviour : MonoBehaviour
     public Vector3 wing1Offset = new (-0.5f, 0.5f);
     public Vector3 wing2Offset = new (-0.25f, 0.5f);
 
-    public float cooldown;
+    public float damage, cooldown;
 
     public LayerMask collisionLayers;
     public TrailRenderer wing1TrailRenderer, wing2TrailRenderer;
     
     void Start()
     {
-        wing1 = new PlayerWing(1, wing1meshObject, wingMaterial, wingCooldownMaterial, wing1Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
-        wing2 = new PlayerWing(1, wing2meshObject, wingMaterial, wingCooldownMaterial, wing2Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
+        wing1 = new PlayerWing(1, damage, wing1meshObject, wingMaterial, wingCooldownMaterial, wing1Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
+        wing2 = new PlayerWing(1, damage, wing2meshObject, wingMaterial, wingCooldownMaterial, wing2Offset, 0.5f, 7f, 0.75f, cooldown, collisionLayers);
 
         wing1.inputMouseButton = 0;
         wing2.inputMouseButton = 1;

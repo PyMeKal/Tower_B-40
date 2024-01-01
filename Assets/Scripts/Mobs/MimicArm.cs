@@ -34,6 +34,10 @@ public class MimicArm : MonoBehaviour
 
     public float limbLength;  // Length of limb
 
+    public float chargeTime;
+    public float clawDamage;
+    public float clawSize;
+    
     private IdleState idleState;
     private AttackState attackState;
     void Start()
@@ -43,8 +47,8 @@ public class MimicArm : MonoBehaviour
         state = MimicArmState.Idle;
 
         idleState = new IdleState(this, idlePosition, clawIdleAngle, clawSpeed);
-        attackState = new AttackState(arm: this, charge: 1.5f, damage: 30f, snapSpeed: clawSpeed * 3f, snapDuration: 1.5f, 
-            chargeClawPosition: idlePosition * 0.75f, chargeClawSpeed: clawSpeed * 2f);
+        attackState = new AttackState(arm: this, charge: chargeTime, damage: clawDamage, snapSpeed: clawSpeed * 3f, snapDuration: 1.5f, 
+            chargeClawPosition: idlePosition * 0.75f, chargeClawSpeed: clawSpeed * 2f, clawSize);
         stateMachine = new StateMachine();
         stateMachine.ChangeState(idleState);
         
@@ -55,12 +59,10 @@ public class MimicArm : MonoBehaviour
     {
         if (Vector2.Distance(mimicAI.ProbablePlayerPos, transform.position) <= limbLength * 2f && mimicAI.PlayerInSight)
         {
-            print("Attack State");
             stateMachine.ChangeStateIfNot(attackState);
         }
         else
         {
-            print("Idle State");
             stateMachine.ChangeStateIfNot(idleState);
         }
     }
@@ -184,6 +186,7 @@ public class MimicArm : MonoBehaviour
         private MimicArm arm;
         private MimicAI ai;
         private float charge, chargeTimer;
+        private bool clawAttackFlag;
         private float damage;
         private float snapSpeed;
         private float snapDuration, snapTimer;
@@ -193,9 +196,11 @@ public class MimicArm : MonoBehaviour
         private readonly Vector3 chargeClawPosition;
         private readonly float clawTargetAngle;
         private float chargeClawSpeed;
+
+        private float clawSize;
         
         public AttackState(MimicArm arm, float charge, float damage, float snapSpeed, float snapDuration,
-            Vector3 chargeClawPosition, float chargeClawSpeed)
+            Vector3 chargeClawPosition, float chargeClawSpeed, float clawSize)
         {
             this.arm = arm;
             ai = arm.GetComponent<MimicAI>();
@@ -207,6 +212,7 @@ public class MimicArm : MonoBehaviour
             snapTimer = snapDuration;
             this.chargeClawPosition = chargeClawPosition;
             this.chargeClawSpeed = chargeClawSpeed;
+            this.clawSize = clawSize;
         }
 
         public void Enter()
@@ -214,6 +220,7 @@ public class MimicArm : MonoBehaviour
             chargeTimer = charge;
             snapTimer = snapDuration;
             arm.SetClawSpeed(chargeClawSpeed);
+            clawAttackFlag = false;
         }
 
         private void ChargeUpdate()
@@ -244,12 +251,37 @@ public class MimicArm : MonoBehaviour
             // arm.clawTargetAngle = arm.mimicAI.FacingRight ? clawTargetAngle : Mathf.PI - clawTargetAngle;
             arm.SetClawOpenAmount(0f);
             snapTimer -= Time.fixedDeltaTime;
+            
+            bool moving = !(Vector3.Distance(arm.clawTransform.localPosition, arm.clawTargetPosition) < clawSize * 0.5f);
+            if (!moving && !clawAttackFlag)
+            {
+                if (Vector3.Distance(arm.clawTransform.position, playerPos) < clawSize)
+                {
+                    ClawAttack();
+                    clawAttackFlag = true;
+                }
+                else
+                {
+                    clawAttackFlag = Vector3.Distance(arm.clawTransform.localPosition, arm.clawTargetPosition) < clawSize * 0.25f;
+                }
+            }
+                
             if (snapTimer <= 0f)
             {
                 snapTimer = snapDuration;
                 chargeTimer = charge;
                 arm.SetClawSpeed(chargeClawSpeed);
+                clawAttackFlag = false;
             }
+        }
+
+        private void ClawAttack()
+        {
+            var player = GM.GetPlayer();
+            player.GetComponent<PlayerStats>().TakeDamage(damage);
+            player.GetComponent<PlayerStats>().ApplyDebuff(PlayerStats.debuffs.slowed, 0.5f);
+            player.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+            player.GetComponent<PlayerMovement>().walkSpeed *= 0.5f;
         }
         
         public void Update()

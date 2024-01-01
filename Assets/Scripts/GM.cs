@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,12 +8,23 @@ public class GM : MonoBehaviour
 {
     public float physicsSpeedMutlitplier = 1f;
     public Tilemap standardAStarTilemap, colliderTilemap;
+    public TimerManager timerManager = new ();
     
     // Start is called before the first frame update
     void Start()
     {
         physicsSpeedMutlitplier = Mathf.Max(0f, physicsSpeedMutlitplier);
         Time.timeScale = physicsSpeedMutlitplier;
+    }
+
+    private void Update()
+    {
+        timerManager.UpdateTimers(Time.deltaTime);
+    }
+
+    private void FixedUpdate()
+    {
+        timerManager.UpdateTimers(Time.fixedDeltaTime);
     }
 
     public static GM GetGM()

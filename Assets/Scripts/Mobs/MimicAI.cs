@@ -199,6 +199,7 @@ public class MimicAI : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         stats = GetComponent<MobStatsInterface>().stats;
         stats.deathAction = Die;
+        stats.takeDamageAction = TakeDamage;
         pfManager = GM.GetPFManager();
         grid = new ("mimic", GM.GetGM().standardAStarTilemap);
         CreateLegs(numLegs);
@@ -822,63 +823,6 @@ public class MimicAI : MonoBehaviour
 
         public void Exit() {}
     }
-    
-    // ------------------------------------------------------------------------------------------------
-    // Search
-    /*
-    [System.Serializable]
-    public struct MimicStateSearch
-    {
-        public PFNode currentNode;
-        public PFNode nextNode;
-        public List<PFNode> searchedNodes;
-
-        public void Reset(Transform self)
-        {
-            print("Search state Reset() call");
-            currentNode = PFManager.GetNearestNode(self.position);
-            nextNode = currentNode.adjacentNodes[Random.Range(0, currentNode.adjacentNodes.Length)];
-            searchedNodes = new List<PFNode>();
-        }
-    }
-
-    void EnterSearchState()
-    {
-        print("Entered search state");
-        searchState.Reset(transform);
-        state = MimicState.Search;
-    }
-    
-    [SerializeField] private MimicStateSearch searchState;
-    
-    void STATE_Search()
-    {
-        float distToNextNode = Vector3.Distance(transform.position, searchState.nextNode.position);
-        float distThresh = 1.5f;
-        if (distToNextNode <= distThresh)
-        {
-            // next node reached. Update current node
-            searchState.searchedNodes.Add(searchState.currentNode);
-            searchState.currentNode = searchState.nextNode;
-            
-            // Filter available next nodes to only contain nodes that haven't been searched
-            PFNode[] availableNodes = searchState.currentNode.adjacentNodes
-                .Where(n => !searchState.searchedNodes.Contains(n)).ToArray();
-
-            if (availableNodes.Length == 0)
-            {
-                searchState.Reset(transform);
-            }
-            else
-            {
-                searchState.nextNode = availableNodes[Random.Range(0, availableNodes.Length)];
-            }
-        }
-
-        destination = searchState.nextNode.position;
-        ProbablePlayerPos = searchState.nextNode.position;
-        MoveToDestination(destination);
-    }*/
 
     // Converted to use StateMachines by GPT-4.
     public class SearchState : IState
@@ -935,6 +879,11 @@ public class MimicAI : MonoBehaviour
     void Die()
     {
         Destroy(gameObject);
+    }
+
+    void TakeDamage()
+    {
+        GetComponent<Animator>().SetTrigger("TakeDamage");
     }
 
     /*

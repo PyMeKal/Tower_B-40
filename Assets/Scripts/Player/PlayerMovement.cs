@@ -141,13 +141,9 @@ public class PlayerMovement : MonoBehaviour
         {
             dash = DashHorizontal;
         }
-        else if (mousePos.y >= transform.position.y + dashYSnap)
-        {
-            dash = DashUp;
-        }
         else
         {
-            dash = Phase;
+            dash = DashRegular;
         }
         if (Input.GetKeyDown(KeyCode.F))
         {
@@ -160,7 +156,7 @@ public class PlayerMovement : MonoBehaviour
             float d = dashDistance;
             rb.MovePosition(transform.position + new Vector3(d*direction, 0));
         }
-        void DashUp()
+        void DashRegular()
         {
             float d = Vector3.Distance(transform.position, mousePos) >= dashDistance ? dashDistance : Vector3.Distance(transform.position, mousePos);
 
@@ -171,11 +167,6 @@ public class PlayerMovement : MonoBehaviour
         }
         if (Input.GetAxisRaw("Horizontal") != 0)
             move = Move;
-
-        void Phase()
-        {
-
-        }
     }
 
     private void RequestAnimation<T>(string param, T value)
