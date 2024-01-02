@@ -47743,6 +47743,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1920754861}
     - target: {fileID: 4218229766908897472, guid: 6a44b09e8a3c0a946a05b930cf6f75f3, type: 3}
+      propertyPath: upDashSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4218229766908897472, guid: 6a44b09e8a3c0a946a05b930cf6f75f3, type: 3}
       propertyPath: dashCooldown
       value: 3
       objectReference: {fileID: 0}
