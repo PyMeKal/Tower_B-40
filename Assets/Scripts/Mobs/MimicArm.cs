@@ -112,7 +112,7 @@ public class MimicArm : MonoBehaviour
 
             if (limbLength < clawDistance * 0.5f)
             {
-                Debug.LogWarning("Limb fucked. Using midpoint to claw position");
+                // Debug.LogWarning("Limb fucked. Using midpoint to claw position");
                 return clawLocalPosition * 0.5f;
             }
             float jointDistanceFromMidpoint = Mathf.Sqrt(limbLength * limbLength - clawDistance * 0.5f * clawDistance * 0.5f);

@@ -13,7 +13,7 @@ public class PlayerMovement : MonoBehaviour
 
     [HideInInspector] public bool facingRight;
 
-    public Transform spritesTransform;
+    public SpriteRenderer sprite;
     private Rigidbody2D rb;
 
     private PlayerAnimation playerAnimation;
@@ -21,7 +21,8 @@ public class PlayerMovement : MonoBehaviour
     private DELVoid flipSprite, move, jump;
 
     [Header("Dash settings")] 
-    [SerializeField] private float dashDistance;
+    [SerializeField] private float dashDistance, dashCooldown;
+    private float dashCooldownTimer;
     [SerializeField] private float dashYSnap, upDashSpeed;
     void Start()
     {
@@ -120,17 +121,9 @@ public class PlayerMovement : MonoBehaviour
 
     void FlipSpritesByMovement()
     {
-        if (Input.GetAxisRaw("Horizontal") > 0)
-        {
-            spritesTransform.localEulerAngles = new Vector3(0, 0, 0);
-            facingRight = true;
-        }
-
-        if (Input.GetAxisRaw("Horizontal") < 0)
-        {
-            spritesTransform.localEulerAngles = new Vector3(0, 180f, 0);
-            facingRight = false;
-        }
+        if(Input.GetAxisRaw("Horizontal") != 0)
+            sprite.flipX = Input.GetAxisRaw("Horizontal") < 0;
+        facingRight = !sprite.flipX;
     }
 
     void Dash()
@@ -145,10 +138,18 @@ public class PlayerMovement : MonoBehaviour
         {
             dash = DashRegular;
         }
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.F) && dashCooldownTimer <= 0f)
         {
             dash();
+            dashCooldownTimer = dashCooldown;
+            playerAnimation.RequestAnimation("Dash", "Trigger");
+
+            
+            sprite.flipX = transform.position.x > mousePos.x;
+            facingRight = !sprite.flipX;
         }
+        else
+            dashCooldownTimer -= Time.deltaTime;
 
         void DashHorizontal()
         {

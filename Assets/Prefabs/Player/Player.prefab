@@ -157,6 +157,7 @@ GameObject:
   - component: {fileID: 7683775612370698393}
   - component: {fileID: 6816904313854625352}
   - component: {fileID: 7453817405451074959}
+  - component: {fileID: 9082435406325222701}
   - component: {fileID: 4218229766908897472}
   - component: {fileID: 6391438851572828633}
   - component: {fileID: 7450456520598219193}
@@ -302,6 +303,23 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!114 &9082435406325222701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765354152505107203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1a318ca021203a488f9f494d05819bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  health: 100
+  defaultMat: {fileID: 0}
+  damagedMat: {fileID: 0}
+  appliedDebuffs: 
 --- !u!114 &4218229766908897472
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -359,6 +377,7 @@ MonoBehaviour:
   wingCooldownMaterial: {fileID: 2100000, guid: cdcd31b8abff075489a74ca87828dc35, type: 2}
   wing1Offset: {x: -0.5, y: 0.5, z: 0}
   wing2Offset: {x: -0.25, y: 0.5, z: 0}
+  damage: 12
   cooldown: 2
   collisionLayers:
     serializedVersion: 2

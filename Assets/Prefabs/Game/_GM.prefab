@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   physicsSpeedMutlitplier: 1
   standardAStarTilemap: {fileID: 0}
+  colliderTilemap: {fileID: 0}
 --- !u!114 &7281170357888884027
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59,7 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b94e563526df4865a73397394bfcd9c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodesFolderTransform: {fileID: 0}
-  ensureEdgeLinks: 1
-  nodeCount: 0
-  aStarTilemap: {fileID: 0}
+  graphTransform: {fileID: 0}
+  wallLayers:
+    serializedVersion: 2
+    m_Bits: 128

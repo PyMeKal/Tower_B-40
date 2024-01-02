@@ -16,8 +16,6 @@ public class PlayerStats : MonoBehaviour
     
     public float maxHealth, health;
 
-    public Material defaultMat, damagedMat;
-
     public List<debuffs> appliedDebuffs = new();
     public Dictionary<debuffs, IPlayerDebuff> debuffsDict;
     
