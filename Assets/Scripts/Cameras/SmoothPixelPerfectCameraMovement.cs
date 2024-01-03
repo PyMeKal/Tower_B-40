@@ -12,7 +12,6 @@ public class SmoothPixelPerfectCameraMovement : MonoBehaviour
     private Camera myCamera;
     private int width, height;
  
- 
     private void Start()
     {
         myCamera = Camera.main;

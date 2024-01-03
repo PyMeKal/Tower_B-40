@@ -7,7 +7,8 @@ public class PlayerStats : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerAnimation playerAnimation;
     private PlayerWingsBehaviour playerWingsBehaviour;
-    
+
+    private float basePlayerWalkSpeed;
     
     public enum debuffs
     {
@@ -49,6 +50,8 @@ public class PlayerStats : MonoBehaviour
 
         debuffsDict = new Dictionary<debuffs, IPlayerDebuff>();
         debuffsDict[debuffs.slowed] = new Slowed(this);
+
+        basePlayerWalkSpeed = playerMovement.walkSpeed;
     }
 
     public void Update()
@@ -81,7 +84,6 @@ public class PlayerStats : MonoBehaviour
     public class Slowed : IPlayerDebuff
     {
         private PlayerStats stats;
-        private float defaultSpeed;
         private float slowedSpeed;
 
         private float timer;
@@ -93,8 +95,7 @@ public class PlayerStats : MonoBehaviour
 
         public void Enter(float duration)
         {
-            defaultSpeed = stats.playerMovement.walkSpeed;
-            stats.playerMovement.walkSpeed = defaultSpeed * 0.5f;
+            stats.playerMovement.walkSpeed *= 0.5f;
             timer = duration;
         }
 
@@ -113,7 +114,7 @@ public class PlayerStats : MonoBehaviour
 
         public void Exit()
         {
-            stats.playerMovement.walkSpeed = defaultSpeed;
+            stats.playerMovement.walkSpeed = stats.basePlayerWalkSpeed;
             stats.appliedDebuffs.Remove(debuffs.slowed);
             timer = 0f;
         }

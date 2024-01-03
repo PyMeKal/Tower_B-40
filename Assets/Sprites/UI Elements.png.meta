@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7855851681aae6a4bb646eeaf68af6ee
+guid: 027874b085ab0f34c85ab1a4a970fbf7
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -46,10 +46,10 @@ TextureImporter:
   spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 9
-  spritePivot: {x: 0.38496733, y: 0.4633987}
-  spritePixelsToUnits: 32
-  spriteBorder: {x: 18, y: 45, z: 12, w: 54}
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 20
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -110,43 +110,43 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Mimic Claw_0
+      name: UI Elements_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 128
-        width: 128
-        height: 128
-      alignment: 9
-      pivot: {x: 0.35, y: 0.45}
+        y: 216
+        width: 384
+        height: 216
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b9b01e696249d4e40b7e3e536a9dc22b
-      internalID: 697389111
+      spriteID: 65086dacd60a5d54b82d007bdf4adfb2
+      internalID: 2142424849
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Mimic Claw_1
+      name: UI Elements_1
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 128
-        height: 128
+        width: 384
+        height: 216
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: da139672fb1caa54aaf066797ed55957
-      internalID: -1523009757
+      spriteID: ec0851b92b8ebb34b972c925bc000440
+      internalID: 714491368
       vertices: []
       indices: 
       edges: []
@@ -155,15 +155,15 @@ TextureImporter:
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
-    internalID: 1537655665
+    internalID: 0
     vertices: []
     indices: 
     edges: []
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Mimic Claw_0: 697389111
-      Mimic Claw_1: -1523009757
+      UI Elements_0: 2142424849
+      UI Elements_1: 714491368
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -317,8 +317,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   health: 100
-  defaultMat: {fileID: 0}
-  damagedMat: {fileID: 0}
   appliedDebuffs: 
 --- !u!114 &4218229766908897472
 MonoBehaviour:
@@ -342,10 +340,11 @@ MonoBehaviour:
     m_Bits: 128
   feetPosition: {fileID: 5930096234693408492}
   facingRight: 0
-  spritesTransform: {fileID: 1522854445328263344}
+  sprite: {fileID: 1628537858267366252}
   dashDistance: 4
+  dashCooldown: 3
   dashYSnap: 0.5
-  upDashSpeed: 10
+  upDashSpeed: 20
 --- !u!114 &6391438851572828633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -395,7 +394,6 @@ GameObject:
   - component: {fileID: 1522854445328263344}
   - component: {fileID: 1628537858267366252}
   - component: {fileID: 5064435688746164988}
-  - component: {fileID: 181407536153147070}
   m_Layer: 11
   m_Name: Sprite
   m_TagString: Untagged
@@ -438,7 +436,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -491,21 +489,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &181407536153147070
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4939335412662515802}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe899c5a1bea33f4799486eded717649, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pixelsPerUnit: 16
-  useVelocityCeil: 1
-  velocityCeil: 1
 --- !u!1 &7847575389217887236
 GameObject:
   m_ObjectHideFlags: 0

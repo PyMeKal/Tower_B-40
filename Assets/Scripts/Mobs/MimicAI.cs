@@ -148,7 +148,6 @@ public class MimicAI : MonoBehaviour
 
     public IdleState idleState;
     public ChaseState chaseState;
-
     public SearchState searchState;
 
 
@@ -209,9 +208,14 @@ public class MimicAI : MonoBehaviour
 
         moveVars.Reset();
         
-        idleState = new IdleState(this, 3f, 1f, 5f, true);
-        chaseState = new ChaseState(this, 5f);
-        searchState = new SearchState(this);
+        //idleState = new IdleState(this, 3f, 1f, 5f, true);
+        //chaseState = new ChaseState(this, 5f);
+        // searchState = new SearchState(this);
+        
+        idleState.Initialize(this);
+        chaseState.Initialize(this);
+        searchState.Initialize(this);
+        
         stateMachine.ChangeState(idleState);
     }
 
@@ -636,6 +640,11 @@ public class MimicAI : MonoBehaviour
             this.isStatic = isStatic;
         }
 
+        public void Initialize(MimicAI ai)
+        {
+            this.ai = ai;
+        }
+
         public void Enter()
         {
             Reset();
@@ -729,6 +738,11 @@ public class MimicAI : MonoBehaviour
             this.ai = ai;
             this.timeOut = timeOut;
             ai.state = MimicState.Chase;
+        }
+        
+        public void Initialize(MimicAI ai)
+        {
+            this.ai = ai;
         }
 
         public void Reset()
@@ -825,6 +839,7 @@ public class MimicAI : MonoBehaviour
     }
 
     // Converted to use StateMachines by GPT-4.
+    [System.Serializable]
     public class SearchState : IState
     {
         private MimicAI ai;
@@ -833,6 +848,11 @@ public class MimicAI : MonoBehaviour
         private List<PFNode> searchedNodes;
 
         public SearchState(MimicAI ai)
+        {
+            this.ai = ai;
+        }
+        
+        public void Initialize(MimicAI ai)
         {
             this.ai = ai;
         }
