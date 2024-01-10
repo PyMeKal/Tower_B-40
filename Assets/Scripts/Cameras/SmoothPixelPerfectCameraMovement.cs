@@ -9,12 +9,12 @@ public class SmoothPixelPerfectCameraMovement : MonoBehaviour
     public UnityEngine.Experimental.Rendering.Universal.PixelPerfectCamera pcc;
     private Vector2 viewportScale;
     private RenderTexture tempRenderTexture;
-    private Camera myCamera;
+    public Camera myCamera;
     private int width, height;
  
     private void Start()
     {
-        myCamera = Camera.main;
+        // myCamera = Camera.main;
         SetWidthAndHeight();
  
         RenderPipelineManager.beginFrameRendering += FrameRenderingStart;

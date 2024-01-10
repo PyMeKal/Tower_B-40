@@ -36,6 +36,11 @@ public class StateMachine {
         }
     }
 
+    public bool CompareType(IState other)
+    {
+        return currentState.GetType() == other.GetType();
+    }
+
     public void Update() {
         if (currentState != null)
             currentState.Update();
