@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class InGameUI : MonoBehaviour
@@ -25,20 +22,16 @@ public class InGameUI : MonoBehaviour
 
     void Update()
     {
-        if(stateQueue.Count > 0)
-            state.ChangeState(stateQueue.Dequeue());
         state.Update();
 
         if (!state.CompareType(basicState))
         {
             basicState.Disabled();
-            print(1);
         }
 
         if (!state.CompareType(skillCanvasState))
         {
             skillCanvasState.Disabled();
-            print(2);
         }
     }
 
@@ -83,8 +76,7 @@ public class InGameUI : MonoBehaviour
 
         public void Disabled()
         {
-            if(panel.activeSelf)
-                panel.SetActive(false);
+            
         }
     }
     
@@ -98,9 +90,11 @@ public class InGameUI : MonoBehaviour
         [SerializeField] private RectTransform[] tiles;
         private Image[] tileImages;
 
+        public Color masterTileColor;
+
         private const int TileSize = 140;
         [SerializeField] private Vector3 activeTileScale = new Vector3(1.2f, 1.2f, 1f);
-        private const float ColorChangeSpeed = 0.5f;
+        private const float ColorChangeSpeed = 0.25f;
         private Color disabledTileColor;
 
         private List<int> activeTileIndexes;
@@ -128,10 +122,6 @@ public class InGameUI : MonoBehaviour
 
         public void Update()
         {
-            // Ensure panel is active
-            if (!panel.activeSelf)
-                panel.SetActive(true);
-
             Vector2 mouseScreenPos = Input.mousePosition;
 
             if (Input.GetMouseButtonDown(0))
@@ -154,19 +144,25 @@ public class InGameUI : MonoBehaviour
                     }
                 }
 
-                if (activeTileIndexes.Contains(i))
+                
+                if (activeTileIndexes.Contains(i) && Input.GetKey(KeyCode.Space))
                 {
-                    tiles[i].GetComponent<Image>().color = Color.white;
-                    print(tileImages[i].color.a);
-                    //print(tiles[i].localScale);
+                    tileImages[i].color = Color.Lerp(tileImages[i].color, Color.white, ColorChangeSpeed);
                     tiles[i].localScale = Vector3.Lerp(tiles[i].localScale, activeTileScale, ColorChangeSpeed);
                 }
                 else
                 {
+                    tileImages[i].color = Color.Lerp(tileImages[i].color, disabledTileColor, ColorChangeSpeed);
                     tiles[i].localScale = Vector3.Lerp(tiles[i].localScale, Vector3.one, ColorChangeSpeed);
-                    tileImages[i].color = disabledTileColor;
                 }
 
+                
+                if (!Input.GetKey(KeyCode.Space))
+                {
+                    // Fade out
+                    // Random botched up solution that's surely gonna cause problems in the future.
+                    tileImages[i].color *= new Color(1, 1, 1, 0.5f);
+                }
             }
 
             if (Input.GetMouseButtonUp(0) && activeTileIndexes.Count > 0)
@@ -195,25 +191,49 @@ public class InGameUI : MonoBehaviour
                     activeTileIndexes = new List<int>();
                 }
                 animator.SetTrigger("OnSpaceRelease");
-                inGameUI.state.ChangeState(inGameUI.basicState);
             }
+
+            
         }
 
         public void Exit()
         {
+            print("Exit called");
             panel.SetActive(false);
             activeTileIndexes = new List<int>();
         }
         
         public void Disabled()
         {
-            if(panel.activeSelf)
-                panel.SetActive(false);
+            print("Running disabled");
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                tileImages[i].color = Color.Lerp(tileImages[i].color, disabledTileColor, 5f * Time.deltaTime);
+            }
         }
+
+        public void SetMasterColor(Color color)
+        {
+            masterTileColor = color;
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                tileImages[i].color = masterTileColor;
+            }
+        }
+    }
+
+    public void BasicToSkillCanvasAnimationStart()
+    {
+        skillCanvasState.SetMasterColor(new Color(1,1,1,0));
     }
 
     public void BasicToSkillCanvasAnimationEnd()
     {
-        stateQueue.Enqueue(skillCanvasState);
+        state.ChangeState(skillCanvasState);
+    }
+    
+    public void SkillCanvasToBasicAnimationEnd()
+    {
+        state.ChangeState(basicState);
     }
 }
