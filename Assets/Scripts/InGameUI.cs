@@ -101,6 +101,8 @@ public class InGameUI : MonoBehaviour
 
         [SerializeField] private LineRenderer lineRenderer;
 
+        [SerializeField] private float setTimeScale;
+
         public SkillCanvasState(GameObject panel)
         {
             this.panel = panel;
@@ -118,6 +120,7 @@ public class InGameUI : MonoBehaviour
         {
             activeTileIndexes = new List<int>();
             panel.SetActive(true);
+            GM.GetGM().physicsSpeedMutlitplier = setTimeScale;
         }
 
         public void Update()
@@ -162,6 +165,7 @@ public class InGameUI : MonoBehaviour
                     // Fade out
                     // Random botched up solution that's surely gonna cause problems in the future.
                     tileImages[i].color *= new Color(1, 1, 1, 0.5f);
+                    GM.GetGM().physicsSpeedMutlitplier = 1f;
                 }
             }
 

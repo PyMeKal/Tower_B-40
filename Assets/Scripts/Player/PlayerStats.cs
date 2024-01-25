@@ -70,7 +70,7 @@ public class PlayerStats : MonoBehaviour
     public void ApplyDebuff(debuffs debuff, float duration)
     {
         debuffsDict[debuff].Enter(duration);
-        appliedDebuffs.Add(debuff);
+        if(!appliedDebuffs.Contains(debuff)) appliedDebuffs.Add(debuff);
     }
     
     public interface IPlayerDebuff
@@ -95,7 +95,7 @@ public class PlayerStats : MonoBehaviour
 
         public void Enter(float duration)
         {
-            stats.playerMovement.walkSpeed *= 0.5f;
+            stats.playerMovement.walkSpeed = stats.basePlayerWalkSpeed * 0.5f;
             timer = duration;
         }
 

@@ -14,12 +14,12 @@ public class GM : MonoBehaviour
     void Start()
     {
         physicsSpeedMutlitplier = Mathf.Max(0f, physicsSpeedMutlitplier);
-        Time.timeScale = physicsSpeedMutlitplier;
     }
 
     private void Update()
     {
         timerManager.UpdateTimers(Time.deltaTime);
+        Time.timeScale = physicsSpeedMutlitplier;
     }
 
     private void FixedUpdate()
