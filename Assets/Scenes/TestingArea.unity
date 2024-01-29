@@ -5394,7 +5394,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentFolder: {fileID: 945957104}
-  parallaxZMultiplier: 0.01
+  parallaxZMultiplier: 0.015
   xOnly: 1
 --- !u!1 &1101039001
 GameObject:
