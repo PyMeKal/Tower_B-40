@@ -13,7 +13,7 @@ public class JumpPad : MonoBehaviour
     {
         // Auto assign playerMovement instead of using public.
         // You can access GM to fetch useful GameObjects and Components! Check GM.cs
-        playerMovement = GM.GetPlayer().GetComponent<PlayerMovement>();
+        playerMovement = GM.PlayerInstance.GetComponent<PlayerMovement>();
     }
 
     // on collision, player will jump on contact

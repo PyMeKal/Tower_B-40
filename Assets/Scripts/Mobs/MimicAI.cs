@@ -200,9 +200,9 @@ public class MimicAI : MonoBehaviour
         stats.deathAction = Die;
         stats.takeDamageAction = TakeDamage;
         pfManager = GM.GetPFManager();
-        grid = new ("mimic", GM.GetGM().standardAStarTilemap);
+        grid = new ("mimic", GM.Instance.standardAStarTilemap);
         CreateLegs(numLegs);
-        playerTransform = GM.GetPlayer().transform;
+        playerTransform = GM.PlayerInstance.transform;
         pathQueue = new Queue<Vector3>();
         SetLegTargetsStay();
 

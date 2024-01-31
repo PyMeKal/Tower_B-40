@@ -120,7 +120,7 @@ public class InGameUI : MonoBehaviour
         {
             activeTileIndexes = new List<int>();
             panel.SetActive(true);
-            GM.GetGM().physicsSpeedMutlitplier = setTimeScale;
+            GM.Instance.physicsSpeedMutlitplier = setTimeScale;
         }
 
         public void Update()
@@ -165,7 +165,7 @@ public class InGameUI : MonoBehaviour
                     // Fade out
                     // Random botched up solution that's surely gonna cause problems in the future.
                     tileImages[i].color *= new Color(1, 1, 1, 0.5f);
-                    GM.GetGM().physicsSpeedMutlitplier = 1f;
+                    GM.Instance.physicsSpeedMutlitplier = 1f;
                 }
             }
 

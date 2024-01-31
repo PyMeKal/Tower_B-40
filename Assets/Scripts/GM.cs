@@ -6,6 +6,26 @@ using UnityEngine.Tilemaps;
 
 public class GM : MonoBehaviour
 {
+    // Singleton design pattern
+    public static GM Instance { get; private set; }
+    public static GameObject PlayerInstance { get; private set; }
+    [SerializeField] private PFManager pfManager;
+    [SerializeField] private AudioManager audioManager;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+        Instance = this;
+
+        PlayerInstance = GetPlayer();
+        pfManager = GetComponent<PFManager>();
+    }
+
+
     public float physicsSpeedMutlitplier = 1f;
     public Tilemap standardAStarTilemap, colliderTilemap;
     public TimerManager timerManager = new ();
@@ -27,10 +47,10 @@ public class GM : MonoBehaviour
         timerManager.UpdateTimers(Time.fixedDeltaTime);
     }
 
-    public static GM GetGM()
-    {
-        return GameObject.FindGameObjectWithTag("GM").GetComponent<GM>();
-    }
+    // public static GM GetGM()
+    // {
+    //     return GameObject.FindGameObjectWithTag("GM").GetComponent<GM>();
+    // }
 
     public static GameObject GetPlayer()
     {
@@ -39,11 +59,16 @@ public class GM : MonoBehaviour
 
     public static Vector3 GetPlayerPosition()
     {
-        return GetPlayer().transform.position;
+        return PlayerInstance.transform.position;
     }
 
     public static PFManager GetPFManager()
     {
-        return GameObject.FindGameObjectWithTag("GM").GetComponent<PFManager>();
+        return Instance.pfManager;
+    }
+
+    public static AudioManager GetAudioManager()
+    {
+        return Instance.audioManager;
     }
 }

@@ -11,7 +11,7 @@ public class Mud : MonoBehaviour
 
     void Start()
     {
-        playerStats = GM.GetPlayer().GetComponent<PlayerStats>();
+        playerStats = GM.PlayerInstance.GetComponent<PlayerStats>();
     }
     
     private void OnCollisionStay2D(Collision2D other) {

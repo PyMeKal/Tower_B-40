@@ -277,7 +277,7 @@ public class MimicArm : MonoBehaviour
 
         private void ClawAttack()
         {
-            var player = GM.GetPlayer();
+            var player = GM.PlayerInstance;
             player.GetComponent<PlayerStats>().TakeDamage(damage);
             player.GetComponent<PlayerStats>().ApplyDebuff(PlayerStats.debuffs.slowed, 0.5f);
             player.GetComponent<Rigidbody2D>().velocity = Vector2.zero;

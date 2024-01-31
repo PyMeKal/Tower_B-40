@@ -69,7 +69,7 @@ public class PlayerWing
         this.speed = speed;
         this.range = range;
         this.travelDistanceCoeff = travelDistanceCoeff;
-        playerTransform = GM.GetPlayer().transform;
+        playerTransform = GM.PlayerInstance.transform;
         playerRb = playerTransform.GetComponent<Rigidbody2D>();
         playerMovement = playerTransform.GetComponent<PlayerMovement>();
 
