@@ -202,14 +202,12 @@ public class InGameUI : MonoBehaviour
 
         public void Exit()
         {
-            print("Exit called");
             panel.SetActive(false);
             activeTileIndexes = new List<int>();
         }
         
         public void Disabled()
         {
-            print("Running disabled");
             for (int i = 0; i < tiles.Length; i++)
             {
                 tileImages[i].color = Color.Lerp(tileImages[i].color, disabledTileColor, 5f * Time.deltaTime);
