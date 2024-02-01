@@ -28,9 +28,9 @@ public class AudioManager : MonoBehaviour
 {
     public int maxInstances = 50; // Maximum number of audio instances to be handled
 
-    class AudioSourceInstance
+    public class AudioSourceInstance
     {
-        private AudioSource audioSource;
+        public AudioSource AudioSource { get; private set; }
         public bool free; // Flag indicating if the AudioSourceInstance is available
         public int Priority { get; private set; }
         public Func<Vector3> TargetPositionGetter {get; private set;}  // Function to get the position for the audio source
@@ -38,7 +38,7 @@ public class AudioManager : MonoBehaviour
 
         public AudioSourceInstance(AudioSource audioSource, bool free, Func<Vector3> targetPositionGetter)
         {
-            this.audioSource = audioSource;
+            AudioSource = audioSource;
             this.free = free;
             TargetPositionGetter = targetPositionGetter;
         }
@@ -47,23 +47,24 @@ public class AudioManager : MonoBehaviour
         {
             // Update audio source position if a position getter is provided
             if(TargetPositionGetter != null)
-                audioSource.transform.position = TargetPositionGetter();
+                AudioSource.transform.position = TargetPositionGetter();
         }
 
         // Sets the audio clip and related properties for playback
         public void SetAudioSource(AudioClip clip, Func<Vector3> targetPositionGetter, Func<bool> freeCondition, 
-            float volume = 1f, float reverb = 0f, bool loop = false, int priority = 0)
+            float volume = 1f, float reverb = 0f, bool loop = false, float spatialBlend = 0f, int priority = 0)
         {
             free = false;
-            audioSource.clip = clip;
-            audioSource.gameObject.SetActive(true);
+            AudioSource.clip = clip;
+            AudioSource.gameObject.SetActive(true);
 
-            audioSource.volume = volume;
-            audioSource.reverbZoneMix = reverb;
-            audioSource.loop = loop;
+            AudioSource.volume = volume;
+            AudioSource.reverbZoneMix = reverb;
+            AudioSource.loop = loop;
+            AudioSource.spatialBlend = spatialBlend;
 
             TargetPositionGetter = targetPositionGetter;
-            FreeCondition = freeCondition;
+            FreeCondition = freeCondition ?? (() => !AudioSource.isPlaying);  // Apply default if null
             
             Priority = priority;
         }
@@ -72,8 +73,8 @@ public class AudioManager : MonoBehaviour
         public void Free()
         {
             free = true;
-            audioSource.Stop();
-            audioSource.gameObject.SetActive(false);
+            AudioSource.Stop();
+            AudioSource.gameObject.SetActive(false);
         }
     }
 
@@ -110,8 +111,26 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public void Request(AudioClip clip, Func<Vector3> targetPositionGetter, Func<bool> freeCondition, float volume = 1f,
-        float reverb = 0f, bool loop = false, int priority = 0)
+    
+    /// <summary>
+    /// Requests an audio clip to be played, using an available or the least important audio source instance.
+    /// </summary>
+    /// <param name="clip">The audio clip to play.</param>
+    /// <param name="targetPositionGetter">Function that returns the Vector3 position for the audio source.</param>
+    /// <param name="freeCondition">Function that defines the condition under which the audio source will be freed.</param>
+    /// <param name="volume">Volume of the audio clip (default 1f).</param>
+    /// <param name="reverb">Reverb mix of the audio source (default 0f).</param>
+    /// <param name="spatialBlend">Spatial blend for stereo audio (default 0f).</param> 
+    /// <param name="loop">Whether the audio should loop (default false).</param>
+    /// <param name="priority">Priority of the audio clip. Lower numbers are higher priority (default 0).</param>
+    /// <returns>The AudioSourceInstance that is used to play the requested audio clip, or null if no instance is available.</returns>
+    /// <remarks>
+    /// The method will first try to find a free audio source instance. If none are available, 
+    /// it will look for an instance playing a clip with a lower priority and replace it. 
+    /// If all instances are playing higher priority clips, the request will be ignored, and null is returned.
+    /// </remarks>
+    public AudioSourceInstance Request(AudioClip clip, Func<Vector3> targetPositionGetter, Func<bool> freeCondition, float volume = 1f,
+        float reverb = 0f, bool loop = false, float spatialBlend = 0f, int priority = 0)
     {
         int lowestPriority = int.MaxValue;
         AudioSourceInstance lowestPriorityInstance = null;
@@ -119,8 +138,8 @@ public class AudioManager : MonoBehaviour
         {
             if (instance.free)
             {
-                instance.SetAudioSource(clip, targetPositionGetter, freeCondition, volume, reverb, loop, priority);
-                return;
+                instance.SetAudioSource(clip, targetPositionGetter, freeCondition, volume, reverb, loop, spatialBlend, priority);
+                return instance;
             }
 
             if (lowestPriority > instance.Priority)
@@ -132,11 +151,12 @@ public class AudioManager : MonoBehaviour
 
         if (lowestPriority < priority)
         {
-            lowestPriorityInstance.SetAudioSource(clip, targetPositionGetter, freeCondition, volume, reverb, loop, priority);
-            return;
+            lowestPriorityInstance.SetAudioSource(clip, targetPositionGetter, freeCondition, volume, reverb, loop, spatialBlend, priority);
+            return lowestPriorityInstance;
         }
         
         // No free instances
         Debug.Log("Audio pool instances full. Request ignored.");
+        return null;
     }
 }

@@ -52,6 +52,8 @@ public class PlayerWing
     private Vector3 mousePosition;
     public TrailRenderer trailRenderer;
 
+    public float Velocity { get; private set; }
+
     public PlayerWing(int id, float damage, GameObject meshObject, Material material, Material cooldownMaterial, Vector3 idlePosition,
         float speed, float range, float travelDistanceCoeff, float cooldown, LayerMask collisionLayers)
     {
@@ -208,6 +210,7 @@ public class PlayerWing
         positionHistory.Add(position);
         
         float velocity = Vector3.Magnitude(position - positionHistory[^2])/Time.fixedDeltaTime;
+        Velocity = velocity;
         // Calculate velocity
         // -> 1. If fast, just use position history to draw wing
         // -> 2. If reasonably slow, use position history + default lengths to draw wing to prevent it from disappearing
@@ -349,6 +352,12 @@ public class PlayerWingsBehaviour : MonoBehaviour
 
         wing1.trailRenderer = wing1TrailRenderer;
         wing2.trailRenderer = wing2TrailRenderer;
+        
+        var playerWingsAudio = GetComponent<PlayerWingsAudio>();
+        
+        playerWingsAudio.wings.Add(wing1);
+        playerWingsAudio.wings.Add(wing2);
+        playerWingsAudio.Setup();
     }
     
     private void FixedUpdate()

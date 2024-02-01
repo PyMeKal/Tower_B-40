@@ -362,6 +362,7 @@ public class PlayerMovement : MonoBehaviour
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
             RequestAnimation("Jump", string.Empty);
+            playerAudio.PlayJumpSFX();
         }
     }
 
